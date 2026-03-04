@@ -1,0 +1,146 @@
+---
+title: Getting Started with the REPL
+description: Introduction to Ivy's interactive REPL environment
+icon: terminal
+---
+
+The Ivy REPL (Read-Eval-Print-Loop) provides an interactive environment for experimenting with Ivy code, testing expressions, and exploring the language features in real-time.
+
+## Starting the REPL
+
+To launch the Ivy REPL, simply run the `ivy` command without any arguments:
+
+```bash
+ivy
+```
+
+You'll be greeted with the Ivy welcome screen:
+
+```
+  _
+ (_)_   ___   _
+ | \ \ / / | | |
+ | |\ V /| |_| |
+ |_| \_/  \__, |
+          |___/ 
+
+Ivy - the friendly functional programming language
+Type :help for commands, :q to quit
+```
+
+## Basic Usage
+
+<Steps>
+  <Step title="Enter expressions">
+    Type any Ivy expression at the `ivy>` prompt and press Enter to evaluate it:
+
+    ```ivy
+    ivy> 2 + 2
+    4
+
+    ivy> "Hello, " ++ "world!"
+    "Hello, world!"
+    ```
+  </Step>
+
+  <Step title="Define variables">
+    Create bindings that persist throughout your REPL session:
+
+    ```ivy
+    ivy> let x = 42
+
+    ivy> x * 2
+    84
+    ```
+  </Step>
+
+  <Step title="Define functions">
+    Define functions interactively:
+
+    ```ivy
+    ivy> let square = fn(n) => n * n
+
+    ivy> square(5)
+    25
+    ```
+  </Step>
+
+  <Step title="Use REPL commands">
+    Access REPL-specific features with commands starting with `:`:
+
+    ```ivy
+    ivy> :type square
+    square :: Int -> Int
+
+    ivy> :env
+    Defined names:
+      square
+      x
+    ```
+  </Step>
+</Steps>
+
+## REPL Prompts
+
+The REPL uses different prompts to indicate its state:
+
+- `ivy>` - The standard prompt, ready for new input
+- `...>` - Continuation prompt for multi-line expressions
+
+<Note>
+  The REPL automatically detects when your input is incomplete (e.g., unclosed parentheses) and switches to continuation mode.
+</Note>
+
+## Type Inference
+
+Ivy's REPL includes full type checking with Hindley-Milner type inference. Every expression is type-checked before evaluation:
+
+```ivy
+ivy> let add = fn(a, b) => a + b
+
+ivy> :type add
+add :: Int -> Int -> Int
+
+ivy> add(1, 2)
+3
+
+ivy> add(1, "hello")
+Error: type mismatch
+  expected Int, found String
+```
+
+## Persistent State
+
+All definitions made in the REPL persist for the duration of your session:
+
+```ivy
+ivy> let pi = 3.14159
+
+ivy> let circleArea = fn(r) => pi * r * r
+
+ivy> circleArea(5.0)
+78.53975
+```
+
+<Note>
+  Use the `:reset` command to clear all definitions and start fresh without exiting the REPL.
+</Note>
+
+## Exiting the REPL
+
+You can exit the REPL in several ways:
+
+- Type `:quit` or `:q`
+- Press `Ctrl+D` (EOF)
+- Press `Ctrl+C` twice
+
+```ivy
+ivy> :quit
+```
+
+## What's Next?
+
+Now that you understand the basics, explore:
+
+- [REPL Commands](/repl/commands) - Learn all available REPL commands
+- [Multi-line Input](/repl/multi-line) - Master writing complex expressions in the REPL

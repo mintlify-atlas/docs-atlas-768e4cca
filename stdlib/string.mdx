@@ -1,0 +1,356 @@
+---
+title: 'String Module'
+description: 'String manipulation and processing functions'
+---
+
+The String module provides comprehensive string manipulation utilities. Import it to access string processing functions.
+
+```ivy
+import String;
+```
+
+## Basic String Functions
+
+### length
+```ivy
+fn length(s: String): Int
+```
+Returns the length of a string (number of bytes, not characters).
+
+**Example:**
+```ivy
+String.length("hello")  -- 5
+String.length("")       -- 0
+```
+
+### trim
+```ivy
+fn trim(s: String): String
+```
+Removes whitespace from both ends of a string.
+
+**Example:**
+```ivy
+String.trim("  hello  ")  -- "hello"
+String.trim("\n\thello\n")  -- "hello"
+```
+
+### empty?
+```ivy
+fn empty?(s: String): Bool
+```
+Returns `true` if the string is empty.
+
+**Example:**
+```ivy
+String.empty?("")       -- true
+String.empty?("hello")  -- false
+```
+
+### notEmpty?
+```ivy
+fn notEmpty?(s: String): Bool
+```
+Returns `true` if the string is not empty.
+
+**Example:**
+```ivy
+String.notEmpty?("hello")  -- true
+String.notEmpty?("")       -- false
+```
+
+## Substring Operations
+
+### contains
+```ivy
+fn contains(haystack: String, needle: String): Bool
+```
+Checks if a string contains a substring.
+
+**Example:**
+```ivy
+String.contains("hello world", "world")  -- true
+String.contains("hello world", "foo")    -- false
+```
+
+### substring
+```ivy
+fn substring(s: String, start: Int, end: Int): String
+```
+Extracts a substring from index `start` to `end` (exclusive). Returns empty string if indices are out of bounds.
+
+**Example:**
+```ivy
+String.substring("hello", 0, 3)  -- "hel"
+String.substring("hello", 2, 5)  -- "llo"
+String.substring("hello", 0, 10) -- "hello"
+```
+
+### startsWith
+```ivy
+fn startsWith(s: String, prefix: String): Bool
+```
+Checks if a string starts with a given prefix.
+
+**Example:**
+```ivy
+String.startsWith("hello", "hel")  -- true
+String.startsWith("hello", "lo")   -- false
+```
+
+### endsWith
+```ivy
+fn endsWith(s: String, suffix: String): Bool
+```
+Checks if a string ends with a given suffix.
+
+**Example:**
+```ivy
+String.endsWith("hello", "lo")   -- true
+String.endsWith("hello", "hel")  -- false
+```
+
+## Case Conversion
+
+### toUpper
+```ivy
+fn toUpper(s: String): String
+```
+Converts a string to uppercase.
+
+**Example:**
+```ivy
+String.toUpper("hello")  -- "HELLO"
+String.toUpper("HeLLo")  -- "HELLO"
+```
+
+### toLower
+```ivy
+fn toLower(s: String): String
+```
+Converts a string to lowercase.
+
+**Example:**
+```ivy
+String.toLower("HELLO")  -- "hello"
+String.toLower("HeLLo")  -- "hello"
+```
+
+## Search and Replace
+
+### replace
+```ivy
+fn replace(s: String, from: String, to: String): String
+```
+Replaces all occurrences of a substring.
+
+**Example:**
+```ivy
+String.replace("hello world", "world", "Ivy")  -- "hello Ivy"
+String.replace("foo bar foo", "foo", "baz")    -- "baz bar baz"
+```
+
+### split
+```ivy
+fn split(s: String, delimiter: String): [String]
+```
+Splits a string by a delimiter into a list of strings.
+
+**Example:**
+```ivy
+String.split("a,b,c", ",")           -- ["a", "b", "c"]
+String.split("hello world", " ")     -- ["hello", "world"]
+String.split("one-two-three", "-")   -- ["one", "two", "three"]
+```
+
+## String Building
+
+### join
+```ivy
+fn join(xs: [String], sep: String): String
+```
+Joins a list of strings with a separator.
+
+**Example:**
+```ivy
+String.join(["a", "b", "c"], ",")  -- "a,b,c"
+String.join(["hello", "world"], " ")  -- "hello world"
+String.join([], ",")  -- ""
+```
+
+### repeat
+```ivy
+fn repeat(s: String, n: Int): String
+```
+Repeats a string `n` times.
+
+**Example:**
+```ivy
+String.repeat("ha", 3)   -- "hahaha"
+String.repeat("*", 5)    -- "*****"
+String.repeat("hi", 0)   -- ""
+```
+
+## Character Operations
+
+### first
+```ivy
+fn first(s: String): Option<String>
+```
+Returns the first character as a string, or `None` if empty.
+
+**Example:**
+```ivy
+String.first("hello")  -- Some("h")
+String.first("")       -- None
+```
+
+### last
+```ivy
+fn last(s: String): Option<String>
+```
+Returns the last character as a string, or `None` if empty.
+
+**Example:**
+```ivy
+String.last("hello")  -- Some("o")
+String.last("")       -- None
+```
+
+## Predicates
+
+### blank?
+```ivy
+fn blank?(s: String): Bool
+```
+Returns `true` if the string consists only of whitespace.
+
+**Example:**
+```ivy
+String.blank?("   ")    -- true
+String.blank?("\n\t")   -- true
+String.blank?(" a ")    -- false
+String.blank?("")       -- true
+```
+
+### equalsIgnoreCase
+```ivy
+fn equalsIgnoreCase(s1: String, s2: String): Bool
+```
+Compares two strings for equality, ignoring case.
+
+**Example:**
+```ivy
+String.equalsIgnoreCase("Hello", "hello")  -- true
+String.equalsIgnoreCase("WORLD", "world")  -- true
+String.equalsIgnoreCase("foo", "bar")      -- false
+```
+
+## Common Patterns
+
+<Accordion title="Processing lines from text">
+```ivy
+import String;
+import List;
+
+let text = "line1\nline2\nline3";
+let lines = String.split(text, "\n");
+
+-- Filter non-empty lines
+let nonEmpty = List.filter(fn (s) => String.notEmpty?(s), lines);
+
+-- Process each line
+let processed = List.map(String.trim, lines);
+```
+</Accordion>
+
+<Accordion title="Parsing CSV data">
+```ivy
+import String;
+import List;
+
+let csv = "name,age,city\nAlice,30,NYC\nBob,25,LA";
+let rows = String.split(csv, "\n");
+let data = List.map(fn (row) => String.split(row, ","), rows);
+
+-- data = [["name", "age", "city"], ["Alice", "30", "NYC"], ["Bob", "25", "LA"]]
+```
+</Accordion>
+
+<Accordion title="Building formatted strings">
+```ivy
+import String;
+import List;
+
+let words = ["hello", "world", "from", "Ivy"];
+
+-- Join with spaces
+let sentence = String.join(words, " ");
+-- "hello world from Ivy"
+
+-- Create a bullet list
+let bullets = List.map(fn (w) => "- " ++ w, words);
+let list = String.join(bullets, "\n");
+-- "- hello\n- world\n- from\n- Ivy"
+```
+</Accordion>
+
+<Accordion title="String validation">
+```ivy
+import String;
+
+fn isValidEmail(email: String): Bool =>
+  String.contains(email, "@") and String.contains(email, ".");
+
+fn isValidUsername(username: String): Bool =>
+  let len = String.length(username);
+  len >= 3 and len <= 20;
+
+fn normalizeInput(input: String): String =>
+  input |> String.trim |> String.toLower;
+```
+</Accordion>
+
+<Accordion title="Working with prefixes and suffixes">
+```ivy
+import String;
+
+-- Remove file extension
+fn removeExtension(filename: String): String =>
+  if String.endsWith(filename, ".txt")
+  then String.substring(filename, 0, String.length(filename) - 4)
+  else filename;
+
+-- Add prefix if not present
+fn ensurePrefix(s: String, prefix: String): String =>
+  if String.startsWith(s, prefix)
+  then s
+  else prefix ++ s;
+```
+</Accordion>
+
+## Low-Level Intrinsics
+
+The String module is built on top of Rust intrinsics. These are not meant to be called directly:
+
+- `__strLength(s: String): Int`
+- `__strTrim(s: String): String`
+- `__strContains(haystack: String, needle: String): Bool`
+- `__strSubstring(s: String, start: Int, end: Int): String`
+- `__strSplit(s: String, delimiter: String): [String]`
+- `__strToUpper(s: String): String`
+- `__strToLower(s: String): String`
+- `__strStartsWith(s: String, prefix: String): Bool`
+- `__strEndsWith(s: String, suffix: String): Bool`
+- `__strReplace(s: String, from: String, to: String): String`
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="List Module" href="/stdlib/list">
+    List functions for working with split strings
+  </Card>
+  <Card title="Convert Module" href="/stdlib/convert">
+    String conversion functions
+  </Card>
+</CardGroup>

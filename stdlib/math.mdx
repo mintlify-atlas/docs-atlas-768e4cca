@@ -1,0 +1,413 @@
+---
+title: 'Math Module'
+description: 'Mathematical operations and numeric utilities'
+---
+
+The Math module provides comprehensive mathematical functions for both integer and floating-point arithmetic.
+
+```ivy
+import Math;
+```
+
+## Basic Numeric Functions
+
+### abs
+```ivy
+pub fn abs(x: Int): Int
+```
+Returns the absolute value of an integer.
+
+**Example:**
+```ivy
+Math.abs(-5)   -- 5
+Math.abs(10)   -- 10
+Math.abs(0)    -- 0
+```
+
+### min
+```ivy
+pub fn min(x: Int, y: Int): Int
+```
+Returns the minimum of two integers.
+
+**Example:**
+```ivy
+Math.min(5, 10)   -- 5
+Math.min(-3, 2)   -- -3
+```
+
+### max
+```ivy
+pub fn max(x: Int, y: Int): Int
+```
+Returns the maximum of two integers.
+
+**Example:**
+```ivy
+Math.max(5, 10)   -- 10
+Math.max(-3, 2)   -- 2
+```
+
+### sign
+```ivy
+pub fn sign(x: Int): Int
+```
+Returns the sign of a number: -1 for negative, 0 for zero, 1 for positive.
+
+**Example:**
+```ivy
+Math.sign(42)    -- 1
+Math.sign(-10)   -- -1
+Math.sign(0)     -- 0
+```
+
+### clamp
+```ivy
+pub fn clamp(value: Int, minVal: Int, maxVal: Int): Int
+```
+Clamps a value between a minimum and maximum.
+
+**Example:**
+```ivy
+Math.clamp(15, 0, 10)   -- 10
+Math.clamp(-5, 0, 10)   -- 0
+Math.clamp(5, 0, 10)    -- 5
+```
+
+## Power and Root Functions
+
+### pow
+```ivy
+pub fn pow(base: Float, exp: Float): Float
+```
+Raises base to the power of exponent (for floating-point numbers).
+
+**Example:**
+```ivy
+Math.pow(2.0, 3.0)    -- 8.0
+Math.pow(10.0, 0.5)   -- 3.162...
+```
+
+### sqrt
+```ivy
+pub fn sqrt(x: Float): Float
+```
+Returns the square root of a floating-point number.
+
+**Example:**
+```ivy
+Math.sqrt(16.0)   -- 4.0
+Math.sqrt(2.0)    -- 1.414...
+```
+
+### powInt
+```ivy
+pub fn powInt(base: Int, exp: Int): Int
+```
+Raises an integer base to an integer exponent (recursive implementation).
+
+**Example:**
+```ivy
+Math.powInt(2, 3)   -- 8
+Math.powInt(5, 2)   -- 25
+Math.powInt(10, 0)  -- 1
+```
+
+## Rounding Functions
+
+### floor
+```ivy
+pub fn floor(x: Float): Int
+```
+Rounds down to the nearest integer.
+
+**Example:**
+```ivy
+Math.floor(3.9)    -- 3
+Math.floor(-2.1)   -- -3
+```
+
+### ceil
+```ivy
+pub fn ceil(x: Float): Int
+```
+Rounds up to the nearest integer.
+
+**Example:**
+```ivy
+Math.ceil(3.1)    -- 4
+Math.ceil(-2.9)   -- -2
+```
+
+### round
+```ivy
+pub fn round(x: Float): Int
+```
+Rounds to the nearest integer.
+
+**Example:**
+```ivy
+Math.round(3.5)    -- 4
+Math.round(3.4)    -- 3
+Math.round(-2.6)   -- -3
+```
+
+## Integer Arithmetic
+
+### gcd
+```ivy
+pub fn gcd(a: Int, b: Int): Int
+```
+Computes the greatest common divisor using the Euclidean algorithm.
+
+**Example:**
+```ivy
+Math.gcd(48, 18)   -- 6
+Math.gcd(7, 13)    -- 1
+```
+
+### lcm
+```ivy
+pub fn lcm(a: Int, b: Int): Int
+```
+Computes the least common multiple.
+
+**Example:**
+```ivy
+Math.lcm(4, 6)    -- 12
+Math.lcm(3, 7)    -- 21
+```
+
+### factorial
+```ivy
+pub fn factorial(n: Int): Int
+```
+Computes n! (factorial). Recursive implementation.
+
+**Example:**
+```ivy
+Math.factorial(5)   -- 120
+Math.factorial(0)   -- 1
+Math.factorial(10)  -- 3628800
+```
+
+<Warning>
+  Factorial grows very quickly. `factorial(20)` exceeds 64-bit integer limits.
+</Warning>
+
+### fibonacci
+```ivy
+pub fn fibonacci(n: Int): Int
+```
+Computes the nth Fibonacci number (naive recursive implementation).
+
+**Example:**
+```ivy
+Math.fibonacci(0)   -- 0
+Math.fibonacci(1)   -- 1
+Math.fibonacci(10)  -- 55
+```
+
+<Warning>
+  This is a naive recursive implementation. It's very slow for large n (n > 40).
+</Warning>
+
+## Predicates
+
+### even?
+```ivy
+pub fn even?(n: Int): Bool
+```
+Returns `true` if the number is even.
+
+**Example:**
+```ivy
+Math.even?(4)   -- true
+Math.even?(7)   -- false
+```
+
+### odd?
+```ivy
+pub fn odd?(n: Int): Bool
+```
+Returns `true` if the number is odd.
+
+**Example:**
+```ivy
+Math.odd?(7)   -- true
+Math.odd?(4)   -- false
+```
+
+### positive?
+```ivy
+pub fn positive?(n: Int): Bool
+```
+Returns `true` if the number is positive (> 0).
+
+**Example:**
+```ivy
+Math.positive?(5)   -- true
+Math.positive?(0)   -- false
+Math.positive?(-3)  -- false
+```
+
+### negative?
+```ivy
+pub fn negative?(n: Int): Bool
+```
+Returns `true` if the number is negative (< 0).
+
+**Example:**
+```ivy
+Math.negative?(-5)  -- true
+Math.negative?(0)   -- false
+Math.negative?(3)   -- false
+```
+
+### zero?
+```ivy
+pub fn zero?(n: Int): Bool
+```
+Returns `true` if the number is zero.
+
+**Example:**
+```ivy
+Math.zero?(0)   -- true
+Math.zero?(1)   -- false
+```
+
+### prime?
+```ivy
+pub fn prime?(n: Int): Bool
+```
+Returns `true` if the number is prime.
+
+**Example:**
+```ivy
+Math.prime?(2)    -- true
+Math.prime?(17)   -- true
+Math.prime?(20)   -- false
+Math.prime?(1)    -- false
+```
+
+## Sum and Product
+
+### sumTo
+```ivy
+pub fn sumTo(n: Int): Int
+```
+Computes the sum of integers from 1 to n using the formula: n × (n + 1) / 2.
+
+**Example:**
+```ivy
+Math.sumTo(5)    -- 15  (1 + 2 + 3 + 4 + 5)
+Math.sumTo(100)  -- 5050
+```
+
+### sumRange
+```ivy
+pub fn sumRange(start: Int, stop: Int): Int
+```
+Computes the sum of integers from start to stop (inclusive).
+
+**Example:**
+```ivy
+Math.sumRange(3, 7)   -- 25  (3 + 4 + 5 + 6 + 7)
+Math.sumRange(1, 5)   -- 15
+```
+
+### productRange
+```ivy
+pub fn productRange(start: Int, stop: Int): Int
+```
+Computes the product of integers from start to stop (inclusive).
+
+**Example:**
+```ivy
+Math.productRange(1, 5)   -- 120  (1 × 2 × 3 × 4 × 5)
+Math.productRange(3, 6)   -- 360  (3 × 4 × 5 × 6)
+```
+
+## Common Patterns
+
+<Accordion title="Computing averages">
+```ivy
+import Math;
+import List;
+
+fn average(xs: [Int]): Float => do {
+  let sum = List.sum(xs);
+  let count = length(xs);
+  floatFromInt(sum) / floatFromInt(count)
+};
+```
+</Accordion>
+
+<Accordion title="Finding distance between points">
+```ivy
+import Math;
+import Convert;
+
+fn distance(x1: Int, y1: Int, x2: Int, y2: Int): Float => do {
+  let dx = Math.abs(x2 - x1);
+  let dy = Math.abs(y2 - y1);
+  let sum = Math.powInt(dx, 2) + Math.powInt(dy, 2);
+  Math.sqrt(Convert.floatFromInt(sum))
+};
+```
+</Accordion>
+
+<Accordion title="Working with percentages">
+```ivy
+import Math;
+
+fn percentage(value: Int, total: Int): Float =>
+  (floatFromInt(value) / floatFromInt(total)) * 100.0;
+
+fn clampPercent(value: Float): Float =>
+  let clamped = Math.clamp(Math.round(value), 0, 100);
+  floatFromInt(clamped);
+```
+</Accordion>
+
+<Accordion title="Generating prime numbers">
+```ivy
+import Math;
+import List;
+
+-- Get all primes up to n
+fn primesUpTo(n: Int): [Int] =>
+  List.range(2, n)
+  |> List.filter(Math.prime?);
+
+-- Get the first n primes
+fn firstNPrimes(n: Int): [Int] =>
+  List.range(2, n * 20)  -- Upper bound estimate
+  |> List.filter(Math.prime?)
+  |> take(n);
+```
+</Accordion>
+
+## Low-Level Intrinsics
+
+The Math module is built on top of Rust intrinsics:
+
+- `__abs(x: Int | Float): Int | Float`
+- `__min(x, y): Int | Float`
+- `__max(x, y): Int | Float`
+- `__pow(base: Float, exp: Float): Float`
+- `__sqrt(x: Float): Float`
+- `__floor(x: Float): Int`
+- `__ceil(x: Float): Int`
+- `__round(x: Float): Int`
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="Convert Module" href="/stdlib/convert">
+    Type conversions (Int ↔ Float)
+  </Card>
+  <Card title="List Module" href="/stdlib/list">
+    Numeric list functions (sum, product, max, min)
+  </Card>
+</CardGroup>

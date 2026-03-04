@@ -1,0 +1,636 @@
+---
+title: Built-in Types
+description: Comprehensive reference for all primitive and built-in types in Ivy
+---
+
+Ivy provides a rich set of built-in types that form the foundation of the type system. These types are primitives implemented in Rust and type constructors defined in the standard library.
+
+## Primitive Types
+
+Primitive types are built directly into the Ivy runtime and cannot be defined in Ivy code.
+
+### Bool
+
+Boolean type representing truth values.
+
+```ivy
+let flag: Bool = true;
+let ready: Bool = false;
+```
+
+**Operations**:
+- Logical AND: `&&`
+- Logical OR: `||`
+- Logical NOT: `!`
+- Equality: `==`, `!=`
+
+**Type signature**:
+```rust:types.rs:31-32
+Bool,
+```
+
+**Examples**:
+```ivy
+let x = true && false;     -- false
+let y = true || false;     -- true
+let z = !true;             -- false
+
+if x == y then
+  println("Equal")
+else
+  println("Not equal")
+end
+```
+
+### Int
+
+Signed integer type for whole numbers.
+
+```ivy
+let count: Int = 42;
+let negative: Int = -10;
+```
+
+**Operations**:
+- Arithmetic: `+`, `-`, `*`, `/`, `%`
+- Comparison: `<`, `<=`, `>`, `>=`, `==`, `!=`
+- Unary negation: `-`
+
+**Type signature**:
+```rust:types.rs:25-26
+Int,
+```
+
+**Examples**:
+```ivy
+let a = 10 + 5;           -- 15
+let b = 10 - 3;           -- 7
+let c = 4 * 5;            -- 20
+let d = 15 / 3;           -- 5
+let e = 17 % 5;           -- 2
+
+let is_positive = a > 0;  -- true
+let is_even = a % 2 == 0; -- false
+```
+
+### Float
+
+Floating-point number type for decimal values.
+
+```ivy
+let pi: Float = 3.14159;
+let temperature: Float = -40.5;
+```
+
+**Operations**:
+- Arithmetic: `+`, `-`, `*`, `/`
+- Comparison: `<`, `<=`, `>`, `>=`, `==`, `!=`
+- Unary negation: `-`
+
+**Type signature**:
+```rust:types.rs:28-29
+Float,
+```
+
+**Examples**:
+```ivy
+let x = 2.5 + 1.5;        -- 4.0
+let y = 10.0 / 3.0;       -- 3.333...
+let z = -3.14;            -- -3.14
+
+let ratio = 22.0 / 7.0;   -- Approximate pi
+```
+
+<Note>
+Integers and floats are separate types in Ivy. Arithmetic operations require both operands to be the same type.
+</Note>
+
+### String
+
+Text string type for sequences of characters.
+
+```ivy
+let message: String = "Hello, Ivy!";
+let empty: String = "";
+```
+
+**Operations**:
+- Concatenation: `++`
+- Equality: `==`, `!=`
+- Comparison: `<`, `<=`, `>`, `>=` (lexicographic)
+- Indexing: `s[i]` returns `Char`
+
+**Type signature**:
+```rust:types.rs:34-35
+String,
+```
+
+**Examples**:
+```ivy
+let greeting = "Hello" ++ ", " ++ "World!";  -- "Hello, World!"
+let first_char = greeting[0];                 -- 'H'
+let is_empty = "" == "";                       -- true
+
+-- String functions from prelude
+let upper = __strToUpper("hello");            -- "HELLO"
+let len = __strLength("Ivy");                 -- 3
+```
+
+### Char
+
+Single character type.
+
+```ivy
+let letter: Char = 'a';
+let digit: Char = '7';
+let newline: Char = '\n';
+```
+
+**Operations**:
+- Equality: `==`, `!=`
+- Comparison: `<`, `<=`, `>`, `>=`
+
+**Type signature**:
+```rust:types.rs:37-38
+Char,
+```
+
+**Examples**:
+```ivy
+let c = 'A';
+let is_uppercase = c >= 'A' && c <= 'Z';  -- true
+```
+
+### Unit Type `()`
+
+The unit type represents the absence of a meaningful value, similar to `void` in other languages.
+
+```ivy
+let nothing: () = ();
+```
+
+**Type signature**:
+```rust:types.rs:40-41
+Unit,
+```
+
+**Examples**:
+```ivy
+-- Functions that perform side effects return ()
+let result: () = println("Hello");
+
+-- Let bindings return ()
+let x = let y = 5; -- x has type (), y is in scope
+
+-- Assignments return ()
+let z: () = x := 10;
+```
+
+## Composite Types
+
+Composite types are constructed from other types.
+
+### Function Types
+
+Function types represent functions from one type to another: `a -> b`
+
+**Type signature**:
+```rust:types.rs:46-47
+Fun(Box<Type>, Box<Type>),
+```
+
+**Examples**:
+```ivy
+-- Int -> Int
+fn increment(x: Int): Int => x + 1;
+
+-- String -> Bool
+fn isEmpty(s: String): Bool => s == "";
+
+-- (a -> b) -> [a] -> [b]
+fn map(f, xs) => match xs with
+  | [] -> []
+  | [x | rest] -> [f(x) | map(f, rest)]
+end;
+
+-- Multi-parameter functions are curried: a -> b -> c
+fn add(x: Int, y: Int): Int => x + y;
+-- Type: Int -> Int -> Int
+```
+
+<Note>
+Function types in Ivy are curried by default. `a -> b -> c` is equivalent to `a -> (b -> c)`.
+</Note>
+
+### Tuple Types
+
+Tuples are fixed-size heterogeneous collections: `(a, b, c)`
+
+**Type signature**:
+```rust:types.rs:49-50
+Tuple(Vec<Type>),
+```
+
+**Examples**:
+```ivy
+-- (Int, String)
+let pair: (Int, String) = (42, "answer");
+
+-- (Bool, Int, Float)
+let triple = (true, 10, 3.14);
+
+-- Destructuring
+let (x, y) = pair;
+println(x);  -- 42
+println(y);  -- "answer"
+
+-- Field access
+let first = pair.0;   -- 42
+let second = pair.1;  -- "answer"
+
+-- Nested tuples
+let nested: ((Int, Int), String) = ((1, 2), "coords");
+```
+
+### List Types
+
+Lists are variable-size homogeneous collections: `[a]`
+
+**Type signature**:
+```rust:types.rs:52-53
+List(Box<Type>),
+```
+
+**Examples**:
+```ivy
+-- [Int]
+let numbers: [Int] = [1, 2, 3, 4, 5];
+
+-- [String]
+let names = ["Alice", "Bob", "Charlie"];
+
+-- [[Bool]]
+let matrix = [[true, false], [false, true]];
+
+-- Empty list (polymorphic)
+let empty: [a] = [];
+
+-- Cons operator ::
+let list = 1 :: [2, 3, 4];  -- [1, 2, 3, 4]
+
+-- List concatenation ++
+let combined = [1, 2] ++ [3, 4];  -- [1, 2, 3, 4]
+```
+
+**Common operations from prelude**:
+```ivy:prelude.ivy:201-245
+fn head([]): Option<a> => None;
+fn head([x | _]): Option<a> => Some(x);
+
+fn tail([]): Option<[a]> => None;
+fn tail([_ | xs]): Option<[a]> => Some(xs);
+
+fn length([]): Int => 0;
+fn length([_ | xs]): Int => 1 + length(xs);
+
+fn isEmpty?([]): Bool => true;
+fn isEmpty?([_ | _]): Bool => false;
+
+fn map(f: a -> b, []): [b] => [];
+fn map(f: a -> b, [x | xs]): [b] => [f(x) | map(f, xs)];
+
+fn filter(pred: a -> Bool, []): [a] => [];
+fn filter(pred: a -> Bool, [x | xs]): [a] =>
+  if pred(x) then [x | filter(pred, xs)] else filter(pred, xs);
+```
+
+## Parametric Types
+
+Parametric types (generics) take type parameters.
+
+### Option Type
+
+Represents an optional value - either `Some(value)` or `None`.
+
+**Definition**:
+```ivy:prelude.ivy:36-41
+type Option<a> =
+| None
+| Some(a)
+;
+```
+
+**Type constructors**:
+```rust:env.rs:56-69
+// Some: a -> Option<a>
+env.insert(
+    "Some".to_string(),
+    Scheme::poly(
+        vec![a],
+        Type::fun(Type::Var(a), Type::named_with("Option", vec![Type::Var(a)])),
+    ),
+);
+
+// None: Option<a>
+env.insert(
+    "None".to_string(),
+    Scheme::poly(vec![a], Type::named_with("Option", vec![Type::Var(a)])),
+);
+```
+
+**Examples**:
+```ivy
+-- Option<Int>
+let some_value: Option<Int> = Some(42);
+let no_value: Option<Int> = None;
+
+-- Pattern matching
+fn unwrapOr(opt: Option<a>, default: a): a => match opt with
+  | None -> default
+  | Some(x) -> x
+end;
+
+let x = unwrapOr(Some(10), 0);  -- 10
+let y = unwrapOr(None, 0);       -- 0
+```
+
+**Common functions**:
+```ivy:prelude.ivy:159-175
+fn some?(None): Bool => false;
+fn some?(Some(_)): Bool => true;
+
+fn none?(opt) => !some?(opt);
+
+fn unwrap(Some(x)) => x;
+-- Note: unwrap(None) is a runtime error
+
+fn unwrapOr(None, default) => default;
+fn unwrapOr(Some(x), _) => x;
+
+fn mapOption(f, None) => None;
+fn mapOption(f, Some(x)) => Some(f(x));
+```
+
+### Result Type
+
+Represents a computation that can succeed with `Ok(value)` or fail with `Err(error)`.
+
+**Definition**:
+```ivy:prelude.ivy:43-48
+type Result<T, E> =
+| Ok(T)
+| Err(E)
+;
+```
+
+**Type constructors**:
+```rust:env.rs:71-93
+// Ok: a -> Result<a, e>
+env.insert(
+    "Ok".to_string(),
+    Scheme::poly(
+        vec![a, b],
+        Type::fun(
+            Type::Var(a),
+            Type::named_with("Result", vec![Type::Var(a), Type::Var(b)]),
+        ),
+    ),
+);
+
+// Err: e -> Result<a, e>
+env.insert(
+    "Err".to_string(),
+    Scheme::poly(
+        vec![a, b],
+        Type::fun(
+            Type::Var(b),
+            Type::named_with("Result", vec![Type::Var(a), Type::Var(b)]),
+        ),
+    ),
+);
+```
+
+**Examples**:
+```ivy
+-- Result<Int, String>
+let success: Result<Int, String> = Ok(42);
+let failure: Result<Int, String> = Err("Something went wrong");
+
+-- Pattern matching
+fn divide(x: Int, y: Int): Result<Int, String> =>
+  if y == 0 then
+    Err("Division by zero")
+  else
+    Ok(x / y)
+  end;
+
+match divide(10, 2) with
+  | Ok(result) -> println("Result: " ++ show(result))
+  | Err(msg) -> println("Error: " ++ msg)
+end
+```
+
+**Common functions**:
+```ivy:prelude.ivy:180-196
+fn ok?(Ok(_)): Bool => true;
+fn ok?(Err(_)): Bool => false;
+
+fn err?(r) => !ok?(r);
+
+fn unwrapOk(Ok(x)) => x;
+fn unwrapErr(Err(e)) => e;
+
+fn mapOk(f: T -> U, Ok(x)): Result<U, E> => Ok(f(x));
+fn mapOk(f: T -> U, Err(e)): Result<U, E> => Err(e);
+
+fn mapErr(f: E -> F, Ok(x)): Result<T, F> => Ok(x);
+fn mapErr(f: E -> F, Err(e)): Result<T, F> => Err(f(e));
+```
+
+<Warning>
+Use `Result` for operations that can fail instead of runtime panics. This makes error handling explicit and type-safe.
+</Warning>
+
+## Named Types
+
+User-defined types with type parameters: `Name<A, B, ...>`
+
+**Type signature**:
+```rust:types.rs:55-56
+Named(String, Vec<Type>),
+```
+
+**Examples**:
+```ivy
+-- Define a custom type
+type Tree<a> =
+| Leaf(a)
+| Node(Tree<a>, Tree<a>)
+;
+
+-- Usage
+let leaf: Tree<Int> = Leaf(42);
+let tree: Tree<Int> = Node(Leaf(1), Leaf(2));
+
+-- Generic data structure
+type Pair<A, B> =
+| MkPair(A, B)
+;
+
+let pair: Pair<Int, String> = MkPair(1, "one");
+```
+
+## Record Types
+
+Structural record types with named fields.
+
+**Type signature**:
+```rust:types.rs:58-59
+Record(String, Vec<(String, Type)>),
+```
+
+**Examples**:
+```ivy
+-- Define a record type
+type Person = {
+  name: String,
+  age: Int,
+  email: String
+};
+
+-- Create a record
+let alice: Person = {
+  name: "Alice",
+  age: 30,
+  email: "alice@example.com"
+};
+
+-- Field access
+let name = alice.name;     -- "Alice"
+let age = alice.age;       -- 30
+
+-- Record update
+let older_alice = { alice | age: 31 };
+
+-- Pattern matching
+fn greet(person: Person): String => match person with
+  | { name, age } -> "Hello " ++ name ++ ", age " ++ show(age)
+end;
+```
+
+## Type Variables
+
+Type variables represent unknown or polymorphic types during inference.
+
+**Type signature**:
+```rust:types.rs:43-44
+Var(TypeVar),
+```
+
+**Display format**:
+```rust:types.rs:6-20
+pub struct TypeVar(pub u32);
+
+impl fmt::Display for TypeVar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let n = self.0 as usize;
+        let letter = (b'a' + (n % 26) as u8) as char;
+        if n < 26 {
+            write!(f, "{}", letter)
+        } else {
+            write!(f, "{}{}", letter, n / 26)
+        }
+    }
+}
+```
+
+**Examples**:
+- `TypeVar(0)` displays as `a`
+- `TypeVar(1)` displays as `b`
+- `TypeVar(25)` displays as `z`
+- `TypeVar(26)` displays as `a1`
+
+## Built-in Functions
+
+The type environment includes polymorphic built-in functions:
+
+### I/O Functions
+
+```rust:env.rs:34-50
+// print: a -> ()
+env.insert(
+    "print".to_string(),
+    Scheme::poly(vec![a], Type::fun(Type::Var(a), Type::Unit)),
+);
+
+// println: a -> ()
+env.insert(
+    "println".to_string(),
+    Scheme::poly(vec![a], Type::fun(Type::Var(a), Type::Unit)),
+);
+
+// show: a -> String
+env.insert(
+    "show".to_string(),
+    Scheme::poly(vec![a], Type::fun(Type::Var(a), Type::String)),
+);
+```
+
+**Examples**:
+```ivy
+print(42);              -- Prints: 42
+println("Hello");       -- Prints: Hello\n
+let s = show([1, 2, 3]); -- "[1, 2, 3]"
+```
+
+### Conversion Functions
+
+```ivy
+__intToString: Int -> String
+__floatToString: Float -> String
+__stringToInt: String -> Int
+__stringToFloat: String -> Float
+__floatFromInt: Int -> Float
+__floatToInt: Float -> Int
+__tryStringToInt: String -> Option<Int>
+__tryStringToFloat: String -> Option<Float>
+```
+
+### Math Functions
+
+```ivy
+__abs: Int -> Int
+__min: Int -> Int -> Int
+__max: Int -> Int -> Int
+__pow: Float -> Float -> Float
+__sqrt: Float -> Float
+__floor: Float -> Int
+__ceil: Float -> Int
+__round: Float -> Int
+__random: Int -> Int -> Int
+```
+
+### String Functions
+
+```ivy
+__strLength: String -> Int
+__strTrim: String -> String
+__strContains: String -> String -> Bool
+__strSubstring: String -> Int -> Int -> String
+__strSplit: String -> String -> [String]
+__strToUpper: String -> String
+__strToLower: String -> String
+__strStartsWith: String -> String -> Bool
+__strEndsWith: String -> String -> Bool
+__strReplace: String -> String -> String -> String
+```
+
+<Note>
+Built-in functions prefixed with `__` are internal intrinsics. User-facing wrappers are provided in the standard library.
+</Note>
+
+## See Also
+
+- [Type System](/reference/type-system) - Overview of Ivy's type system
+- [Type Inference](/reference/type-inference) - How types are automatically inferred
+- [Pattern Matching](/language/pattern-matching) - Using patterns with types

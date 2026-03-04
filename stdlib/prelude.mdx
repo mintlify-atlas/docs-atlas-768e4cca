@@ -1,0 +1,425 @@
+---
+title: 'Prelude Module'
+description: 'Core types and functions automatically loaded in every Ivy program'
+---
+
+The Prelude module is the foundation of Ivy programming. It's **automatically imported** into every program and provides essential types, traits, and functions.
+
+<Note>
+  The Prelude is loaded by default. To disable it, use the `--no-prelude` compiler flag.
+</Note>
+
+## Core Data Types
+
+### Primitive Types
+These types are built into the Ivy runtime:
+
+- `Bool` - Boolean values (`true`, `false`)
+- `Int` - 64-bit signed integers
+- `Float` - 64-bit floating-point numbers
+- `String` - UTF-8 encoded strings
+- `Char` - Single Unicode character
+- `()` - Unit type (represents no value)
+
+### Sum Types
+
+#### Option
+Represents a value that may or may not exist. Use this instead of null/nil.
+
+```ivy
+type Option<a> =
+| None
+| Some(a)
+;
+```
+
+**Example:**
+```ivy
+fn divide(a: Int, b: Int): Option<Int> =>
+  if b == 0 then None
+  else Some(a / b);
+
+match divide(10, 2) with
+| Some(result) -> println("Result: " ++ show(result))
+| None -> println("Division by zero")
+end;
+```
+
+#### Result
+Represents a computation that may fail. Use this instead of exceptions.
+
+```ivy
+type Result<T, E> =
+| Ok(T)
+| Err(E)
+;
+```
+
+**Example:**
+```ivy
+fn safeParse(s: String): Result<Int, String> =>
+  match tryStringToInt(s) with
+  | Some(n) -> Ok(n)
+  | None -> Err("Invalid integer: " ++ s)
+  end;
+```
+
+#### Ordering
+Represents the result of comparing two values.
+
+```ivy
+type Ordering =
+| Less
+| Equal
+| Greater
+;
+```
+
+## Core Traits
+
+### Show
+Convert a value to its string representation.
+
+<ParamField path="show" type="a -> String">
+  Converts any value to a String for display
+</ParamField>
+
+**Example:**
+```ivy
+show(42)        -- "42"
+show(true)      -- "true"
+show(Some(5))   -- "Some(5)"
+```
+
+### Eq
+Structural equality comparison.
+
+<ParamField path="eq" type="a -> a -> Bool">
+  Returns `true` if two values are equal
+</ParamField>
+
+<ParamField path="neq" type="a -> a -> Bool">
+  Returns `true` if two values are not equal (default implementation: `!(eq(x, y))`)
+</ParamField>
+
+### Ord
+Total ordering for comparable types.
+
+<ParamField path="compare" type="a -> a -> Ordering">
+  Compares two values and returns their ordering relationship
+</ParamField>
+
+<ParamField path="lt" type="a -> a -> Bool">
+  Less than comparison
+</ParamField>
+
+<ParamField path="le" type="a -> a -> Bool">
+  Less than or equal comparison
+</ParamField>
+
+<ParamField path="gt" type="a -> a -> Bool">
+  Greater than comparison
+</ParamField>
+
+<ParamField path="ge" type="a -> a -> Bool">
+  Greater than or equal comparison
+</ParamField>
+
+<ParamField path="max" type="a -> a -> a">
+  Returns the maximum of two values
+</ParamField>
+
+<ParamField path="min" type="a -> a -> a">
+  Returns the minimum of two values
+</ParamField>
+
+## Boolean Functions
+
+### not
+```ivy
+fn not(x: Bool): Bool
+```
+Logical negation.
+
+**Example:**
+```ivy
+not(true)   -- false
+not(false)  -- true
+```
+
+## Option Functions
+
+### some?
+```ivy
+fn some?(opt: Option<a>): Bool
+```
+Returns `true` if the option is `Some`.
+
+### none?
+```ivy
+fn none?(opt: Option<a>): Bool
+```
+Returns `true` if the option is `None`.
+
+### unwrap
+```ivy
+fn unwrap(opt: Option<a>): a
+```
+Extracts the value from `Some`. **Runtime error** if called on `None`.
+
+<Warning>
+  Use `unwrap` carefully! Prefer pattern matching or `unwrapOr` for safer code.
+</Warning>
+
+### unwrapOr
+```ivy
+fn unwrapOr(opt: Option<a>, default: a): a
+```
+Returns the value from `Some`, or `default` if `None`.
+
+**Example:**
+```ivy
+unwrapOr(Some(42), 0)  -- 42
+unwrapOr(None, 0)      -- 0
+```
+
+### mapOption
+```ivy
+fn mapOption(f: a -> b, opt: Option<a>): Option<b>
+```
+Applies function `f` to the value inside `Some`, or returns `None`.
+
+**Example:**
+```ivy
+mapOption(fn (x) => x * 2, Some(5))  -- Some(10)
+mapOption(fn (x) => x * 2, None)     -- None
+```
+
+### flatMapOption
+```ivy
+fn flatMapOption(f: a -> Option<b>, opt: Option<a>): Option<b>
+```
+Applies function `f` that returns an Option, and flattens the result.
+
+## Result Functions
+
+### ok?
+```ivy
+fn ok?(r: Result<T, E>): Bool
+```
+Returns `true` if the result is `Ok`.
+
+### err?
+```ivy
+fn err?(r: Result<T, E>): Bool
+```
+Returns `true` if the result is `Err`.
+
+### unwrapOk
+```ivy
+fn unwrapOk(r: Result<T, E>): T
+```
+Extracts the value from `Ok`. **Runtime error** if called on `Err`.
+
+### unwrapErr
+```ivy
+fn unwrapErr(r: Result<T, E>): E
+```
+Extracts the error from `Err`. **Runtime error** if called on `Ok`.
+
+### mapOk
+```ivy
+fn mapOk(f: T -> U, r: Result<T, E>): Result<U, E>
+```
+Applies function `f` to the value inside `Ok`, or propagates `Err`.
+
+### mapErr
+```ivy
+fn mapErr(f: E -> F, r: Result<T, E>): Result<T, F>
+```
+Applies function `f` to the error inside `Err`, or propagates `Ok`.
+
+## List Functions
+
+### head
+```ivy
+fn head(xs: [a]): Option<a>
+```
+Returns the first element of a list, or `None` if empty.
+
+### tail
+```ivy
+fn tail(xs: [a]): Option<[a]>
+```
+Returns all elements except the first, or `None` if empty.
+
+### length
+```ivy
+fn length(xs: [a]): Int
+```
+Returns the number of elements in a list.
+
+### isEmpty?
+```ivy
+fn isEmpty?(xs: [a]): Bool
+```
+Returns `true` if the list is empty.
+
+### map
+```ivy
+fn map(f: a -> b, xs: [a]): [b]
+```
+Applies function `f` to each element.
+
+**Example:**
+```ivy
+map(fn (x) => x * 2, [1, 2, 3])  -- [2, 4, 6]
+```
+
+### filter
+```ivy
+fn filter(pred: a -> Bool, xs: [a]): [a]
+```
+Keeps only elements where `pred` returns `true`.
+
+**Example:**
+```ivy
+filter(fn (x) => x > 2, [1, 2, 3, 4])  -- [3, 4]
+```
+
+### foldl
+```ivy
+fn foldl(f: b -> a -> b, acc: b, xs: [a]): b
+```
+Left fold: reduces a list from left to right.
+
+**Example:**
+```ivy
+foldl(fn (acc, x) => acc + x, 0, [1, 2, 3, 4])  -- 10
+```
+
+### foldr
+```ivy
+fn foldr(f: a -> b -> b, acc: b, xs: [a]): b
+```
+Right fold: reduces a list from right to left.
+
+### reverse
+```ivy
+fn reverse(xs: [a]): [a]
+```
+Reverses a list.
+
+### concat
+```ivy
+fn concat(xs: [a], ys: [a]): [a]
+```
+Concatenates two lists.
+
+**Example:**
+```ivy
+concat([1, 2], [3, 4])  -- [1, 2, 3, 4]
+```
+
+### any
+```ivy
+fn any(pred: a -> Bool, xs: [a]): Bool
+```
+Returns `true` if `pred` is true for any element.
+
+### all
+```ivy
+fn all(pred: a -> Bool, xs: [a]): Bool
+```
+Returns `true` if `pred` is true for all elements.
+
+### take
+```ivy
+fn take(n: Int, xs: [a]): [a]
+```
+Returns the first `n` elements.
+
+### drop
+```ivy
+fn drop(n: Int, xs: [a]): [a]
+```
+Removes the first `n` elements.
+
+## I/O Functions
+
+These functions are implemented as Rust builtins.
+
+### print
+```ivy
+fn print(x: a): ()
+```
+Prints a value without a newline.
+
+### println
+```ivy
+fn println(x: a): ()
+```
+Prints a value with a newline.
+
+### show
+```ivy
+fn show(x: a): String
+```
+Converts any value to a string representation.
+
+## Utility Functions
+
+### id
+```ivy
+fn id(x: a): a
+```
+Identity function: returns its argument unchanged.
+
+### const
+```ivy
+fn const(x: a, _: b): a
+```
+Constant function: returns first argument, ignoring the second.
+
+### flip
+```ivy
+fn flip(f: a -> b -> c): b -> a -> c
+```
+Flips the order of function arguments.
+
+### compose
+```ivy
+fn compose(f: b -> c, g: a -> b): a -> c
+```
+Function composition: `compose(f, g)(x) = f(g(x))`.
+
+**Example:**
+```ivy
+let addOne = fn (x) => x + 1;
+let double = fn (x) => x * 2;
+let f = compose(double, addOne);
+
+f(5)  -- 12 (double(addOne(5)))
+```
+
+### pipe
+```ivy
+fn pipe(x: a, f: a -> b): b
+```
+Pipe operator helper: applies function `f` to value `x`.
+
+**Example:**
+```ivy
+5 |> pipe(fn (x) => x + 1) |> pipe(fn (x) => x * 2)  -- 12
+```
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="List Module" href="/stdlib/list">
+    Extended list operations
+  </Card>
+  <Card title="Convert Module" href="/stdlib/convert">
+    Type conversion functions
+  </Card>
+</CardGroup>

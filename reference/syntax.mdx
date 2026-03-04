@@ -1,0 +1,476 @@
+---
+title: Language Syntax
+description: Complete syntax reference for the Ivy programming language
+---
+
+This page provides a comprehensive reference for Ivy's syntax, covering all language constructs from declarations to expressions.
+
+## Program Structure
+
+An Ivy program consists of a sequence of top-level declarations:
+
+```ivy
+module Example;
+
+import Math;
+
+type Option<a> = | None | Some(a);
+
+let x = 42;
+
+fn add(a, b) => a + b;
+```
+
+## Declarations
+
+### Module Declaration
+
+Declare the current module:
+
+```ivy
+module ModuleName;
+```
+
+### Import Declarations
+
+Ivy supports Python-style import syntax:
+
+```ivy
+// Qualified import
+import Math;
+
+// Import with alias
+import Math as M;
+
+// Import all
+from Math import *;
+
+// Import specific items
+from Math import sin, cos, pi;
+```
+
+### Type Declarations
+
+Define custom types with the `type` keyword:
+
+**Sum Types (Algebraic Data Types):**
+
+```ivy
+type Option<a> = 
+  | None 
+  | Some(a);
+
+type Result<t, e> = 
+  | Ok(t) 
+  | Err(e);
+```
+
+**Record Types:**
+
+```ivy
+type Person = {
+  name: String,
+  age: Int,
+  email: String
+};
+```
+
+**Public Types:**
+
+```ivy
+pub type Point = {
+  x: Float,
+  y: Float
+};
+```
+
+### Function Declarations
+
+Functions are defined with the `fn` keyword:
+
+**Simple Function:**
+
+```ivy
+fn add(x, y) => x + y;
+```
+
+**With Type Annotations:**
+
+```ivy
+fn add(x: Int, y: Int): Int => x + y;
+```
+
+**Guarded Functions:**
+
+```ivy
+fn abs(x)
+  | x >= 0 => x
+  | x < 0 => -x;
+```
+
+**Type Signatures:**
+
+```ivy
+fn factorial :: Int -> Int;
+
+fn factorial(n)
+  | n == 0 => 1
+  | n > 0 => n * factorial(n - 1);
+```
+
+### Let Bindings
+
+Bind values to names:
+
+```ivy
+let x = 42;
+let name = "Alice";
+```
+
+**Mutable Bindings:**
+
+```ivy
+let mut counter = 0;
+```
+
+**With Type Annotations:**
+
+```ivy
+let x: Int = 42;
+```
+
+**Pattern Matching in Let:**
+
+```ivy
+let (x, y) = (1, 2);
+let [first, second] = [10, 20];
+```
+
+### Trait Declarations
+
+Define interfaces with traits:
+
+```ivy
+trait Show<a> {
+  fn show: a -> String;
+}
+
+trait Eq<a> {
+  fn eq(x: a, y: a): Bool => x == y;
+}
+```
+
+### Implementation Blocks
+
+Implement traits for types:
+
+```ivy
+impl Show for Int {
+  fn show(x) => int_to_string(x);
+}
+
+impl Eq for Point where Eq<Float> {
+  fn eq(p1, p2) => 
+    p1.x == p2.x && p1.y == p2.y;
+}
+```
+
+## Expressions
+
+### Literals
+
+```ivy
+// Integers
+42
+-10
+
+// Floats
+3.14
+-0.5
+
+// Strings
+"hello, world"
+
+// Characters
+'a'
+'\n'
+
+// Booleans
+true
+false
+
+// Unit
+()
+```
+
+### Variables
+
+```ivy
+x
+myVariable
+calculateSum
+```
+
+### If Expressions
+
+Ivy uses `if-then-else` expressions (not statements):
+
+```ivy
+if x > 0 then "positive" else "non-positive"
+
+if condition then 
+  doSomething()
+else 
+  doSomethingElse()
+```
+
+<Note>
+Ivy's `if` is an expression that always returns a value. Both `then` and `else` branches are required.
+</Note>
+
+### Match Expressions
+
+Pattern matching with `match-with-end`:
+
+```ivy
+match option with
+  | None -> 0
+  | Some(x) -> x
+end
+
+match list with
+  | [] -> "empty"
+  | [x] -> "one element"
+  | [x, y] -> "two elements"
+  | _ -> "many elements"
+end
+```
+
+### Lambda Expressions
+
+Anonymous functions:
+
+```ivy
+fn (x) => x * 2
+
+fn (x, y) => x + y
+
+fn (x: Int, y: Int): Int => x + y
+```
+
+### Let Expressions
+
+Let bindings in expression position:
+
+```ivy
+let x = 10
+let y = 20
+x + y
+```
+
+### Do Blocks
+
+Sequence multiple expressions:
+
+```ivy
+do {
+  println("Hello");
+  println("World");
+  42
+}
+```
+
+### Function Calls
+
+```ivy
+print("hello")
+add(1, 2)
+map(fn (x) => x * 2, [1, 2, 3])
+```
+
+### Field Access
+
+```ivy
+person.name
+point.x
+```
+
+### Index Access
+
+```ivy
+list[0]
+array[i]
+```
+
+### Assignment
+
+Mutate variables:
+
+```ivy
+counter = counter + 1
+array[i] = value
+```
+
+### Tuples
+
+```ivy
+(1, 2)
+("Alice", 30, true)
+```
+
+### Lists
+
+```ivy
+[1, 2, 3, 4]
+["apple", "banana", "cherry"]
+[]
+
+// List cons notation
+[head | tail]
+```
+
+### Records
+
+**Construction:**
+
+```ivy
+Person { 
+  name: "Alice", 
+  age: 30, 
+  email: "alice@example.com" 
+}
+```
+
+**Update:**
+
+```ivy
+{ person | age: 31 }
+
+{ point | x: 10, y: 20 }
+```
+
+## Patterns
+
+Patterns are used in `let` bindings, function parameters, and `match` expressions.
+
+### Pattern Types
+
+```ivy
+// Wildcard
+_
+
+// Literal
+0
+"hello"
+true
+
+// Variable binding
+x
+name
+
+// Constructor
+None
+Some(x)
+Ok(value)
+
+// Tuple
+(x, y)
+(a, b, c)
+
+// List
+[]
+[x]
+[x, y, z]
+
+// Cons pattern
+head :: tail
+
+// Record
+Person { name, age }
+Point { x: px, y: py }
+
+// Or pattern
+0 | 1
+None | Some(0)
+```
+
+## Type Expressions
+
+### Basic Types
+
+```ivy
+Int
+Float
+String
+Bool
+Char
+()
+```
+
+### Type Variables
+
+```ivy
+a
+b
+t
+```
+
+### Function Types
+
+```ivy
+Int -> Int
+Int -> Int -> Int
+(Int, Int) -> Int
+a -> b -> a
+```
+
+### Generic Types
+
+```ivy
+Option<Int>
+Result<String, Error>
+List<a>
+```
+
+### Tuple Types
+
+```ivy
+(Int, String)
+(a, b, c)
+```
+
+### List Types
+
+```ivy
+[Int]
+[String]
+[a]
+```
+
+## Comments
+
+```ivy
+// Single-line comment
+
+/* 
+ * Multi-line comment
+ * Spans multiple lines
+ */
+```
+
+## Precedence and Associativity
+
+See the [Operators](/reference/operators) page for detailed operator precedence information.
+
+<Accordion title="Expression Precedence (highest to lowest)">
+  1. Postfix (function calls, field access, indexing)
+  2. Unary (negation `-`, logical not `!`)
+  3. Multiplicative (`*`, `/`, `%`)
+  4. Additive (`+`, `-`)
+  5. List concatenation (`++`)
+  6. Comparison (`<`, `<=`, `>`, `>=`)
+  7. Equality (`==`, `!=`)
+  8. Logical AND (`&&`)
+  9. Logical OR (`||`)
+  10. Assignment (`=`)
+</Accordion>

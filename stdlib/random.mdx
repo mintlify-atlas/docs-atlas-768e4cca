@@ -1,0 +1,302 @@
+---
+title: 'Random Module'
+description: 'Random number generation utilities'
+---
+
+The Random module provides functions for generating random numbers and making random choices. All random functions use a thread-local random number generator.
+
+```ivy
+import Random;
+```
+
+<Warning>
+  Random number generation is **non-deterministic** and has side effects. Each call produces different results.
+</Warning>
+
+## Basic Random Functions
+
+### random
+```ivy
+pub fn random(min: Int, max: Int): Int
+```
+Generates a random integer in the range `[min, max]` (inclusive on both ends).
+
+**Example:**
+```ivy
+import Random;
+
+-- Roll a six-sided die
+let roll = Random.random(1, 6);
+println("You rolled: " ++ show(roll));
+
+-- Generate a random year
+let year = Random.random(1900, 2024);
+```
+
+### randomTo
+```ivy
+pub fn randomTo(max: Int): Int
+```
+Generates a random integer in the range `[0, max]` (inclusive).
+
+**Example:**
+```ivy
+import Random;
+
+-- Random index for a 10-element list
+let index = Random.randomTo(9);
+
+-- Random percentage (0-100)
+let percent = Random.randomTo(100);
+```
+
+### randomBelow
+```ivy
+pub fn randomBelow(max: Int): Int
+```
+Generates a random integer in the range `[0, max)` (exclusive of max).
+
+**Example:**
+```ivy
+import Random;
+
+-- Random index for a list of length n
+let n = 10;
+let index = Random.randomBelow(n);  -- 0 to 9
+```
+
+## Boolean Random
+
+### randomBool
+```ivy
+pub fn randomBool(): Bool
+```
+Generates a random boolean value (50/50 chance of `true` or `false`).
+
+**Example:**
+```ivy
+import Random;
+
+let coinFlip = Random.randomBool();
+
+if coinFlip then
+  println("Heads!")
+else
+  println("Tails!");
+```
+
+## Random Choice
+
+### choice
+```ivy
+pub fn choice(xs: [a]): a
+```
+Picks a random element from a non-empty list.
+
+<Warning>
+  This function will fail at runtime if called on an empty list.
+</Warning>
+
+**Example:**
+```ivy
+import Random;
+
+let colors = ["red", "green", "blue", "yellow"];
+let randomColor = Random.choice(colors);
+println("Random color: " ++ randomColor);
+
+let names = ["Alice", "Bob", "Charlie"];
+let winner = Random.choice(names);
+println("Winner: " ++ winner);
+```
+
+## Common Patterns
+
+<Accordion title="Simulating dice rolls">
+```ivy
+import Random;
+
+-- Roll a standard six-sided die
+fn d6(): Int => Random.random(1, 6);
+
+-- Roll n six-sided dice and sum them
+fn rollDice(n: Int): Int =>
+  if n <= 0 then 0
+  else d6() + rollDice(n - 1);
+
+-- Roll 2d6 (two six-sided dice)
+let result = rollDice(2);
+println("You rolled: " ++ show(result));
+```
+</Accordion>
+
+<Accordion title="Shuffling a list (Fisher-Yates)">
+```ivy
+import Random;
+import List;
+
+-- Note: This is a simplified version
+-- A proper shuffle requires mutable arrays
+fn shuffle(xs: [a]): [a] =>
+  if isEmpty?(xs) then []
+  else do {
+    let i = Random.randomBelow(length(xs));
+    match List.nth(xs, i) with
+    | Some(elem) -> do {
+        let rest = List.filter(fn (x, idx) => idx != i, List.enumerate(xs))
+          |> List.map(fn ((_, x)) => x);
+        [elem | shuffle(rest)]
+      }
+    | None -> shuffle(xs)
+    end
+  };
+```
+</Accordion>
+
+<Accordion title="Random sampling">
+```ivy
+import Random;
+import List;
+
+-- Take n random elements from a list
+fn sample(xs: [a], n: Int): [a] =>
+  if n <= 0 or isEmpty?(xs) then []
+  else do {
+    let elem = Random.choice(xs);
+    [elem | sample(xs, n - 1)]
+  };
+
+let numbers = List.range(1, 100);
+let sample = sample(numbers, 5);
+println("Random sample: " ++ show(sample));
+```
+</Accordion>
+
+<Accordion title="Random string generation">
+```ivy
+import Random;
+import List;
+import String;
+
+fn randomChar(): String => do {
+  let chars = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
+               "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
+               "u", "v", "w", "x", "y", "z"];
+  Random.choice(chars)
+};
+
+fn randomString(length: Int): String =>
+  if length <= 0 then ""
+  else randomChar() ++ randomString(length - 1);
+
+let id = randomString(8);
+println("Random ID: " ++ id);
+```
+</Accordion>
+
+<Accordion title="Probability simulation">
+```ivy
+import Random;
+
+-- Simulate an event with given probability (0.0 to 1.0)
+fn probability(chance: Float): Bool => do {
+  let roll = Random.random(0, 100);
+  floatFromInt(roll) / 100.0 < chance
+};
+
+-- 30% chance of rain
+if probability(0.3) then
+  println("It's raining!")
+else
+  println("It's sunny!");
+```
+</Accordion>
+
+<Accordion title="Random walk simulation">
+```ivy
+import Random;
+import List;
+
+fn randomWalk(steps: Int, position: Int): [Int] =>
+  if steps <= 0 then [position]
+  else do {
+    let step = if Random.randomBool() then 1 else -1;
+    let newPos = position + step;
+    [position | randomWalk(steps - 1, newPos)]
+  };
+
+let walk = randomWalk(20, 0);
+println("Random walk: " ++ show(walk));
+```
+</Accordion>
+
+<Accordion title="Monte Carlo simulation">
+```ivy
+import Random;
+import List;
+
+-- Estimate pi using Monte Carlo method
+fn estimatePi(samples: Int): Float => do {
+  let hits = List.range(1, samples)
+    |> List.map(fn (_) => do {
+      let x = floatFromInt(Random.random(-1000, 1000)) / 1000.0;
+      let y = floatFromInt(Random.random(-1000, 1000)) / 1000.0;
+      if x * x + y * y <= 1.0 then 1 else 0
+    })
+    |> List.sum;
+  4.0 * floatFromInt(hits) / floatFromInt(samples)
+};
+
+let pi = estimatePi(10000);
+println("Estimated pi: " ++ show(pi));
+```
+</Accordion>
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Games" icon="gamepad">
+    Dice rolls, card shuffling, random encounters
+  </Card>
+  <Card title="Simulations" icon="flask">
+    Monte Carlo methods, random walks, agent behavior
+  </Card>
+  <Card title="Testing" icon="vial">
+    Random test data, property-based testing
+  </Card>
+  <Card title="Sampling" icon="chart-simple">
+    Statistical sampling, random selection
+  </Card>
+</CardGroup>
+
+## Low-Level Intrinsics
+
+The Random module is built on top of a Rust intrinsic:
+
+- `__random(min: Int, max: Int): Int` - Generate random integer in range [min, max]
+
+<Note>
+  The random number generator is thread-local and uses the `rand` crate's default RNG.
+</Note>
+
+## Implementation Notes
+
+### Thread Safety
+Each thread has its own random number generator, so random functions are thread-safe.
+
+### Seeding
+Currently, there's no way to seed the random number generator from Ivy code. The RNG is automatically seeded when first used.
+
+### Distribution
+All random integers are uniformly distributed over the specified range.
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="List Module" href="/stdlib/list">
+    List functions for working with random data
+  </Card>
+  <Card title="Math Module" href="/stdlib/math">
+    Mathematical functions for simulations
+  </Card>
+</CardGroup>

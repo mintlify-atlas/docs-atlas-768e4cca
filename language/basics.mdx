@@ -1,0 +1,241 @@
+---
+title: Language Basics
+description: Learn the fundamentals of Ivy - variables, literals, expressions, and basic syntax
+---
+
+Ivy is a functional programming language with a clean, expressive syntax. This guide covers the core building blocks of the language.
+
+## Variables and Bindings
+
+Variables in Ivy are declared using the `let` keyword. By default, all bindings are immutable.
+
+```ivy
+let x = 42
+let name = "Alice"
+let isActive = true
+```
+
+<Note>
+Identifiers starting with lowercase letters are value names, while those starting with uppercase letters are type or constructor names.
+</Note>
+
+### Type Annotations
+
+You can optionally annotate variable types:
+
+```ivy
+let age: Int = 30
+let pi: Float = 3.14159
+let message: String = "Hello, Ivy!"
+```
+
+### Mutable Bindings
+
+For mutable variables, use the `mut` keyword:
+
+```ivy
+let mut counter = 0
+counter = counter + 1  -- Assignment updates the value
+```
+
+## Literals
+
+Ivy supports several primitive literal types:
+
+<CodeGroup>
+
+```ivy Integers
+let decimal = 42
+let negative = -17
+let zero = 0
+```
+
+```ivy Floats
+let pi = 3.14
+let negative = -0.5
+let scientific = 2.5e10
+```
+
+```ivy Strings
+let greeting = "Hello, world!"
+let multiline = "Line 1\nLine 2"
+let empty = ""
+```
+
+```ivy Characters
+let letter = 'a'
+let newline = '\n'
+let unicode = '🌟'
+```
+
+```ivy Booleans
+let yes = true
+let no = false
+```
+
+```ivy Unit
+let nothing = ()  -- The unit type, similar to void
+```
+
+</CodeGroup>
+
+## Expressions
+
+Everything in Ivy is an expression that evaluates to a value.
+
+### Arithmetic Operations
+
+```ivy
+let sum = 10 + 5        -- Addition
+let diff = 10 - 5       -- Subtraction
+let product = 10 * 5    -- Multiplication
+let quotient = 10 / 5   -- Division
+let remainder = 10 % 3  -- Modulo
+```
+
+### Comparison Operations
+
+```ivy
+let equal = 5 == 5       -- Equality
+let notEqual = 5 != 3    -- Inequality
+let less = 3 < 5         -- Less than
+let lessEq = 3 <= 5      -- Less than or equal
+let greater = 5 > 3      -- Greater than
+let greaterEq = 5 >= 3   -- Greater than or equal
+```
+
+### Logical Operations
+
+```ivy
+let and = true && false  -- Logical AND
+let or = true || false   -- Logical OR
+let not = !true          -- Logical NOT
+```
+
+### Conditional Expressions
+
+The `if-then-else` expression is the primary conditional construct:
+
+```ivy
+let max = if x > y then x else y
+
+let sign = 
+  if n > 0 then "positive"
+  else if n < 0 then "negative"
+  else "zero"
+```
+
+<Tip>
+Since `if` is an expression, both branches must return a value of the same type.
+</Tip>
+
+## Tuples
+
+Tuples group multiple values of potentially different types:
+
+```ivy
+let point = (10, 20)
+let person = ("Alice", 30, true)
+let nested = ((1, 2), (3, 4))
+```
+
+Access tuple elements through pattern matching (covered in the Pattern Matching guide).
+
+## Lists
+
+Lists are homogeneous collections of values:
+
+```ivy
+let numbers = [1, 2, 3, 4, 5]
+let names = ["Alice", "Bob", "Charlie"]
+let empty = []
+```
+
+### List Operators
+
+```ivy
+-- Cons operator: prepend an element
+let list = 1 :: [2, 3, 4]  -- [1, 2, 3, 4]
+
+-- Concatenation: join two lists
+let combined = [1, 2] ++ [3, 4]  -- [1, 2, 3, 4]
+```
+
+## Do Blocks
+
+Do blocks allow you to sequence multiple expressions:
+
+```ivy
+let result = do {
+  let x = 10;
+  let y = 20;
+  x + y  -- Last expression is the result
+}
+```
+
+<Note>
+Statements inside do blocks are separated by semicolons, except for the last expression which is the return value.
+</Note>
+
+## Comments
+
+Ivy uses `--` for single-line comments:
+
+```ivy
+-- This is a single-line comment
+let x = 42  -- Inline comment
+
+-- Multi-line comments are just
+-- multiple single-line comments
+-- stacked together
+```
+
+## Identifiers
+
+Identifier naming conventions:
+
+- **Value names**: Start with lowercase or underscore: `value`, `_private`, `myVar`
+- **Type names**: Start with uppercase: `Int`, `Option`, `Person`
+- **Predicates**: Often end with `?`: `isEmpty?`, `prime?`, `some?`
+
+```ivy
+-- Value identifiers
+let firstName = "Alice"
+let _internal = 42
+
+-- Type identifiers  
+type Option<a> = | None | Some(a);
+type Person = { name: String, age: Int };
+
+-- Predicate functions
+fn even?(n: Int): Bool => n % 2 == 0;
+```
+
+## Operator Precedence
+
+From highest to lowest precedence:
+
+1. Function application: `f x`
+2. Unary operators: `-`, `!`
+3. Multiplication, division, modulo: `*`, `/`, `%`
+4. Addition, subtraction: `+`, `-`
+5. List operators: `::`, `++`
+6. Comparison: `<`, `<=`, `>`, `>=`
+7. Equality: `==`, `!=`
+8. Logical AND: `&&`
+9. Logical OR: `||`
+
+Use parentheses to override precedence:
+
+```ivy
+let a = 2 + 3 * 4      -- 14
+let b = (2 + 3) * 4    -- 20
+```
+
+## Next Steps
+
+Now that you understand the basics, explore:
+
+- [Type System](/language/types) - Learn about Ivy's powerful type system
+- [Functions](/language/functions) - Master function definitions and closures
+- [Pattern Matching](/language/pattern-matching) - Destructure data elegantly

@@ -1,97 +1,266 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: Welcome to Ivy
+description: A friendly, statically-typed functional programming language with Hindley-Milner type inference
+mode: custom
 ---
 
-## Setting up
+<div className="relative overflow-hidden bg-gradient-to-br from-[#2E7D32] via-[#4CAF50] to-[#81C784] dark:from-[#1a4d1a] dark:via-[#2E7D32] dark:to-[#4CAF50] py-20">
+  <div className="max-w-6xl mx-auto px-6 lg:px-8">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <div className="lg:col-span-7">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
+          Welcome to Ivy
+        </h1>
+        <p className="text-lg sm:text-xl text-white/90 max-w-2xl mb-8">
+          A friendly, statically-typed functional programming language with Hindley-Milner type inference. Write expressive, type-safe code without type annotations.
+        </p>
+        <div className="flex flex-wrap gap-4">
+          <a 
+            href="/quickstart" 
+            className="inline-flex items-center px-6 py-3 bg-white text-[#2E7D32] font-semibold rounded-lg hover:bg-white/90 transition-colors no-underline"
+          >
+            Get started
+            <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+          <a 
+            href="/language/basics" 
+            className="inline-flex items-center px-6 py-3 border-2 border-white/30 bg-white/10 text-white font-semibold rounded-lg hover:bg-white/20 transition-colors no-underline"
+          >
+            Learn the language
+          </a>
+        </div>
+      </div>
+      <div className="lg:col-span-5">
+        <div className="bg-[#1a1d27] rounded-xl p-6 shadow-2xl border border-white/10">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
+            <div className="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+            <div className="w-3 h-3 rounded-full bg-[#27c93f]"></div>
+          </div>
+          <pre className="text-sm text-gray-100 overflow-x-auto">
+            <code>{`ivy> fn factorial(n: Int): Int =>
+...>   if n <= 1 then 1
+...>   else n * factorial(n - 1);
 
-Get your documentation site up and running in minutes.
+ivy> factorial(5)
+120
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+ivy> :type factorial
+factorial :: Int -> Int`}</code>
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-## Make it yours
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+    Quick start
+  </h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Get up and running with Ivy in minutes
+  </p>
 
-Design a docs site that looks great and empowers your users.
+  <Steps>
+    <Step title="Install Ivy">
+      Clone the repository and build from source using Cargo:
+      
+      ```bash
+      git clone https://github.com/gtr/ivy.git
+      cd ivy
+      cargo build --release
+      ```
+      
+      The compiled binary will be at `target/release/ivy`.
+    </Step>
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+    <Step title="Start the REPL">
+      Run Ivy without arguments to start the interactive REPL:
+      
+      ```bash
+      ./target/release/ivy
+      ```
+      
+      You'll see the Ivy welcome message:
+      
+      ```
+        _
+       (_)_   ___   _
+       | \ \ / / | | |
+       | |\ V /| |_| |
+       |_| \_/  \__, |
+                |___/
+      
+      Ivy - the friendly functional programming language
+      Type :help for commands, :q to quit
+      ```
+    </Step>
 
-## Create beautiful pages
+    <Step title="Write your first program">
+      Try a simple expression in the REPL:
+      
+      ```ivy
+      ivy> let double = fn(x) => x * 2;
+      ivy> double(21)
+      42
+      ```
+      
+      <Note>
+        Notice that you didn't need to write type annotations — Ivy inferred the types automatically using Hindley-Milner type inference.
+      </Note>
+    </Step>
 
-Everything you need to create world-class documentation.
+    <Step title="Run a program file">
+      Create a file called `hello.ivy`:
+      
+      ```ivy
+      fn greet(name: String): String =>
+        "Hello, " ++ name ++ "!";
+      
+      let main = __println(greet("World"));
+      ```
+      
+      Run it with:
+      
+      ```bash
+      ./target/release/ivy hello.ivy
+      ```
+    </Step>
+  </Steps>
+</div>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+    Explore by feature
+  </h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Discover what makes Ivy unique
+  </p>
 
-## Need inspiration?
+  <CardGroup cols={2}>
+    <Card title="Type inference" icon="wand-magic-sparkles" href="/language/type-inference">
+      Write code without type annotations. Ivy figures out the types for you using Hindley-Milner inference.
+    </Card>
+    <Card title="Pattern matching" icon="code-branch" href="/language/pattern-matching">
+      Deconstruct data with powerful pattern matching and exhaustiveness checking.
+    </Card>
+    <Card title="Interactive REPL" icon="terminal" href="/repl/getting-started">
+      Experiment with code in a friendly read-eval-print loop with multi-line support.
+    </Card>
+    <Card title="Standard library" icon="book" href="/stdlib/overview">
+      Rich collection of built-in functions for lists, strings, math, file I/O, and more.
+    </Card>
+    <Card title="Module system" icon="cube" href="/language/modules">
+      Organize code with imports and exports. Keep your projects modular and maintainable.
+    </Card>
+    <Card title="Functional paradigm" icon="function" href="/language/functions">
+      First-class functions, closures, and recursion. Embrace functional programming patterns.
+    </Card>
+  </CardGroup>
+</div>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+    Key features
+  </h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    What you get with Ivy
+  </p>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="p-6 rounded-lg border border-gray-200 dark:border-[#27272a] bg-white dark:bg-[#1a1d27]">
+      <div className="flex items-start gap-4">
+        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#4CAF50]/10 dark:bg-[#4CAF50]/20 flex items-center justify-center">
+          <svg className="w-5 h-5 text-[#4CAF50]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <div>
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Static type checking</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Catch type errors before runtime with comprehensive static analysis.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div className="p-6 rounded-lg border border-gray-200 dark:border-[#27272a] bg-white dark:bg-[#1a1d27]">
+      <div className="flex items-start gap-4">
+        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#4CAF50]/10 dark:bg-[#4CAF50]/20 flex items-center justify-center">
+          <svg className="w-5 h-5 text-[#4CAF50]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <div>
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Expression-based syntax</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Everything is an expression that returns a value. Write concise, composable code.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div className="p-6 rounded-lg border border-gray-200 dark:border-[#27272a] bg-white dark:bg-[#1a1d27]">
+      <div className="flex items-start gap-4">
+        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#4CAF50]/10 dark:bg-[#4CAF50]/20 flex items-center justify-center">
+          <svg className="w-5 h-5 text-[#4CAF50]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <div>
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Algebraic data types</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Define sum types and product types. Model your domain precisely.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div className="p-6 rounded-lg border border-gray-200 dark:border-[#27272a] bg-white dark:bg-[#1a1d27]">
+      <div className="flex items-start gap-4">
+        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#4CAF50]/10 dark:bg-[#4CAF50]/20 flex items-center justify-center">
+          <svg className="w-5 h-5 text-[#4CAF50]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <div>
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Friendly error messages</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Clear, actionable error messages with source code context using miette.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div className="mt-20 mb-16 max-w-5xl mx-auto px-6">
+  <div className="rounded-2xl border border-gray-200 dark:border-[#27272a] bg-gradient-to-br from-gray-50 to-white dark:from-[#1a1d27] dark:to-[#242838] p-8 md:p-12">
+    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+      Ready to get started?
+    </h2>
+    <p className="text-lg text-gray-600 dark:text-gray-400 mb-6 max-w-2xl">
+      Dive into the documentation and start building with Ivy today.
+    </p>
+    <div className="flex flex-wrap gap-4">
+      <a 
+        href="/quickstart" 
+        className="inline-flex items-center px-6 py-3 bg-[#4CAF50] text-white font-semibold rounded-lg hover:bg-[#45a049] transition-colors no-underline"
+      >
+        Start building
+        <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </a>
+      <a 
+        href="https://github.com/gtr/ivy" 
+        className="inline-flex items-center px-6 py-3 border border-gray-300 dark:border-[#27272a] bg-white dark:bg-[#1a1d27] text-gray-900 dark:text-white font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-[#242838] transition-colors no-underline"
+      >
+        View on GitHub
+      </a>
+    </div>
+  </div>
+</div>

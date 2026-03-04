@@ -1,0 +1,441 @@
+---
+title: Type Inference
+description: Hindley-Milner type inference algorithm implementation in Ivy
+---
+
+Ivy implements the **Hindley-Milner type inference algorithm** (also known as Algorithm W), which enables automatic type deduction without requiring explicit type annotations.
+
+## Algorithm Overview
+
+The Hindley-Milner algorithm is a constraint-based type inference system that:
+
+1. Generates fresh type variables for unknown types
+2. Collects constraints by traversing the AST
+3. Solves constraints through unification
+4. Applies substitutions to obtain concrete types
+
+<Note>
+The implementation is located in `ivy-types/src/infer.rs` and follows the approach described in [Stephen Diehl's Write You a Haskell](https://smunix.github.io/dev.stephendiehl.com/fun/006_hindley_milner.html).
+</Note>
+
+## TypeChecker Structure
+
+The type checker maintains state during inference:
+
+```rust:infer.rs:25-35
+pub struct TypeChecker {
+    /// Type variable generator
+    gen: TypeVarGen,
+    /// Current substitution (accumulates constraints)
+    pub subst: Subst,
+    /// Type registry for exhaustiveness checking
+    pub registry: TypeRegistry,
+    /// Modules currently being loaded (for cycle detection)
+    pub loaded_modules: HashSet<String>,
+}
+```
+
+## Inference Rules
+
+The `infer` method implements type inference for all expression forms:
+
+```rust:infer.rs:48-165
+pub fn infer(&mut self, expr: &Spanned<Expr>, env: &TypeEnv) -> TypeResult<Type> {
+    let span = expr.span;
+    match &expr.node {
+        Expr::Lit(lit) => Ok(self.infer_lit(lit)),
+        Expr::Var(ident) => {
+            let name = &ident.name;
+            match env.get(name) {
+                Some(scheme) => Ok(self.gen.instantiate(scheme)),
+                None => Err(TypeError::undefined_variable(name, span)),
+            }
+        }
+        // ... other expression forms
+    }
+}
+```
+
+### Literals
+
+Literals have direct, concrete types:
+
+```rust:infer.rs:168-178
+fn infer_lit(&self, lit: &Literal) -> Type {
+    match lit {
+        Literal::Int(_) => Type::Int,
+        Literal::Float(_) => Type::Float,
+        Literal::String(_) => Type::String,
+        Literal::Char(_) => Type::Char,
+        Literal::Bool(_) => Type::Bool,
+        Literal::Unit => Type::Unit,
+    }
+}
+```
+
+### Variables
+
+Variable lookup instantiates polymorphic type schemes:
+
+```ivy
+let id = fn (x) => x;  -- Type: forall a. a -> a
+let x = id(5);         -- Instantiate: Int -> Int
+let y = id("hello");   -- Instantiate: String -> String
+```
+
+### Binary Operations
+
+Binary operations constrain operand types:
+
+```rust:infer.rs:180-239
+fn infer_binary(
+    &mut self,
+    left: &Spanned<Expr>,
+    op: BinOp,
+    right: &Spanned<Expr>,
+    env: &TypeEnv,
+    span: Span,
+) -> TypeResult<Type> {
+    let left_ty = self.infer(left, env)?;
+    let right_ty = self.infer(right, env)?;
+    
+    match op {
+        BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod => {
+            unify_with_subst(&left_ty, &right_ty, &mut self.subst, span)?;
+            let resolved = self.subst.apply(&left_ty);
+            match resolved {
+                Type::Int | Type::Float => Ok(resolved),
+                Type::Var(_) => {
+                    unify_with_subst(&resolved, &Type::Int, &mut self.subst, span)?;
+                    Ok(Type::Int)
+                }
+                _ => Err(TypeError::mismatch(Type::Int, resolved, span)),
+            }
+        }
+        BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Le | BinOp::Gt | BinOp::Ge => {
+            unify_with_subst(&left_ty, &right_ty, &mut self.subst, span)?;
+            Ok(Type::Bool)
+        }
+        // ... other operators
+    }
+}
+```
+
+### Function Calls
+
+Function calls build an expected function type and unify:
+
+```rust:infer.rs:407-431
+fn infer_call(
+    &mut self,
+    callee: &Spanned<Expr>,
+    args: &[Spanned<Expr>],
+    env: &TypeEnv,
+    span: Span,
+) -> TypeResult<Type> {
+    let callee_ty = self.infer(callee, env)?;
+    let mut arg_types = Vec::new();
+    for arg in args {
+        arg_types.push(self.infer(arg, env)?;
+    }
+    
+    // Build expected function type: arg1 -> arg2 -> ... -> result
+    let result_ty = self.gen.fresh_type();
+    let mut expected = result_ty.clone();
+    for arg_ty in arg_types.into_iter().rev() {
+        expected = Type::fun(arg_ty, expected);
+    }
+    
+    unify_with_subst(&callee_ty, &expected, &mut self.subst, span)?;
+    
+    Ok(result_ty)
+}
+```
+
+### Lambda Expressions
+
+Lambda expressions create function types:
+
+```rust:infer.rs:364-405
+fn infer_lambda(
+    &mut self,
+    params: &[Param],
+    return_ty: Option<&Spanned<ivy_syntax::types::TypeExpr>>,
+    body: &Spanned<Expr>,
+    env: &TypeEnv,
+) -> TypeResult<Type> {
+    let mut param_types = Vec::new();
+    let mut bindings = Vec::new();
+    
+    for param in params {
+        let ty = if let Some(ann) = &param.ty {
+            self.type_expr_to_type(&ann.node, env)
+        } else {
+            self.gen.fresh_type()
+        };
+        
+        if let Pattern::Var(ident) = &param.pattern.node {
+            bindings.push((ident.name.clone(), Scheme::mono(ty.clone())));
+        }
+        param_types.push(ty);
+    }
+    
+    let body_env = env.extend(bindings);
+    let body_ty = self.infer(body, &body_env)?;
+    
+    if let Some(ann) = return_ty {
+        let ann_ty = self.type_expr_to_type(&ann.node, env);
+        unify_with_subst(&body_ty, &ann_ty, &mut self.subst, ann.span)?;
+    }
+    
+    let mut result = body_ty;
+    for param_ty in param_types.into_iter().rev() {
+        result = Type::fun(param_ty, result);
+    }
+    
+    Ok(result)
+}
+```
+
+### If Expressions
+
+If expressions require boolean conditions and matching branch types:
+
+```rust:infer.rs:306-323
+fn infer_if(
+    &mut self,
+    condition: &Spanned<Expr>,
+    then_branch: &Spanned<Expr>,
+    else_branch: &Spanned<Expr>,
+    env: &TypeEnv,
+    span: Span,
+) -> TypeResult<Type> {
+    let cond_ty = self.infer(condition, env)?;
+    unify_with_subst(&cond_ty, &Type::Bool, &mut self.subst, condition.span)?;
+    
+    let then_ty = self.infer(then_branch, env)?;
+    let else_ty = self.infer(else_branch, env)?;
+    unify_with_subst(&then_ty, &else_ty, &mut self.subst, span)?;
+    
+    Ok(then_ty)
+}
+```
+
+### Pattern Matching
+
+Pattern matching performs type-safe destructuring:
+
+```rust:infer.rs:325-362
+fn infer_match(
+    &mut self,
+    scrutinee: &Spanned<Expr>,
+    arms: &[MatchArm],
+    env: &TypeEnv,
+    span: Span,
+) -> TypeResult<Type> {
+    let scrutinee_ty = self.infer(scrutinee, env)?;
+    
+    if arms.is_empty() {
+        return Ok(self.gen.fresh_type());
+    }
+    
+    let mut result_ty: Option<Type> = None;
+    
+    for arm in arms {
+        let bindings = self.infer_pattern(&arm.pattern, &scrutinee_ty, env)?;
+        let arm_env = env.extend(bindings);
+        let body_ty = self.infer(&arm.body, &arm_env)?;
+        
+        match &result_ty {
+            Some(ty) => {
+                unify_with_subst(ty, &body_ty, &mut self.subst, arm.span)?;
+            }
+            None => {
+                result_ty = Some(body_ty);
+            }
+        }
+    }
+    
+    // Check exhaustiveness
+    let patterns: Vec<&Pattern> = arms.iter().map(|arm| &arm.pattern.node).collect();
+    let resolved_ty = self.subst.apply(&scrutinee_ty);
+    exhaustiveness::check_exhaustiveness(&resolved_ty, &patterns, &self.registry, span)?;
+    
+    Ok(result_ty.unwrap_or_else(|| self.gen.fresh_type()))
+}
+```
+
+<Warning>
+Pattern matching in Ivy includes exhaustiveness checking to ensure all possible cases are covered.
+</Warning>
+
+## Unification
+
+Unification finds substitutions that make two types equal:
+
+```rust:unify.rs:20-97
+pub fn unify_with_subst(t1: &Type, t2: &Type, subst: &mut Subst, span: Span) -> TypeResult<()> {
+    let t1 = subst.apply(t1);
+    let t2 = subst.apply(t2);
+    
+    match (&t1, &t2) {
+        // Same primitive types
+        (Type::Int, Type::Int)
+        | (Type::Float, Type::Float)
+        | (Type::Bool, Type::Bool)
+        | (Type::String, Type::String)
+        | (Type::Char, Type::Char)
+        | (Type::Unit, Type::Unit) => Ok(()),
+        
+        // Same type variable
+        (Type::Var(v1), Type::Var(v2)) if v1 == v2 => Ok(()),
+        
+        // Type variable on left: bind it
+        (Type::Var(v), ty) => bind_var(*v, ty, subst, span),
+        
+        // Type variable on right: bind it
+        (ty, Type::Var(v)) => bind_var(*v, ty, subst, span),
+        
+        // Function types: unify parameter and return types
+        (Type::Fun(a1, r1), Type::Fun(a2, r2)) => {
+            unify_with_subst(a1, a2, subst, span)?;
+            unify_with_subst(r1, r2, subst, span)
+        }
+        
+        // ... other cases
+        
+        // Mismatch
+        _ => Err(TypeError::mismatch(t1, t2, span)),
+    }
+}
+```
+
+### Occurs Check
+
+The occurs check prevents infinite types:
+
+```rust:unify.rs:99-108
+fn bind_var(var: TypeVar, ty: &Type, subst: &mut Subst, span: Span) -> TypeResult<()> {
+    // Occurs check: prevent infinite types like a = [a]
+    if ty.contains_var(var) {
+        return Err(TypeError::infinite_type(var, ty.clone(), span));
+    }
+    
+    subst.bind(var, ty.clone());
+    Ok(())
+}
+```
+
+Without the occurs check, we could generate invalid infinite types:
+
+```ivy
+let rec_list = [rec_list];  -- Error: Infinite type a = [a]
+```
+
+## Pattern Type Inference
+
+Patterns bind variables with inferred types:
+
+```rust:infer.rs:557-640
+pub fn infer_pattern(
+    &mut self,
+    pattern: &Spanned<Pattern>,
+    expected: &Type,
+    env: &TypeEnv,
+) -> TypeResult<Vec<(String, Scheme)>> {
+    let mut bindings = Vec::new();
+    self.collect_pattern_bindings(pattern, expected, &mut bindings, env)?;
+    Ok(bindings)
+}
+```
+
+Pattern forms include:
+
+- **Variable**: `x` binds to any type
+- **Wildcard**: `_` matches any type without binding
+- **Literal**: `42`, `true`, `"hello"` match exact values
+- **Tuple**: `(x, y, z)` destructures tuples
+- **List**: `[]`, `[x]`, `[x, y]` match lists
+- **Cons**: `[x | xs]` splits head and tail
+- **Constructor**: `Some(x)`, `Ok(value)` match variants
+- **Record**: `{ name, age }` destructures records
+
+## Type Finalization
+
+After inference, types are finalized by applying all substitutions:
+
+```rust:infer.rs:827-830
+pub fn finalize(&self, ty: &Type) -> Type {
+    self.subst.apply(ty)
+}
+```
+
+## Inference Example Walkthrough
+
+Let's trace the inference for:
+
+```ivy
+fn map(f, xs) => match xs with
+  | [] -> []
+  | [x | rest] -> [f(x) | map(f, rest)]
+end
+```
+
+**Step 1**: Generate fresh variables
+- `f : a`
+- `xs : b`
+
+**Step 2**: Analyze match scrutinee
+- `xs : b`
+
+**Step 3**: First arm `[] -> []`
+- Pattern `[]` unifies `b` with `[c]` for fresh `c`
+- Body `[]` has type `[d]` for fresh `d`
+- Result type: `[d]`
+
+**Step 4**: Second arm `[x | rest] -> [f(x) | map(f, rest)]`
+- Pattern `[x | rest]` with `xs : [c]`
+  - `x : c`
+  - `rest : [c]`
+- Expression `f(x)`:
+  - Build expected type: `c -> e` for fresh `e`
+  - Unify `a` with `c -> e`
+  - Result: `e`
+- Expression `map(f, rest)`:
+  - Recursive call returns `[e]`
+- Cons `[f(x) | map(f, rest)]`: type `[e]`
+
+**Step 5**: Unify arm types
+- Unify `[d]` with `[e]`
+- Results in `d = e`
+
+**Step 6**: Build function type
+- Parameters: `f : c -> e`, `xs : [c]`
+- Return: `[e]`
+- Type: `(c -> e) -> [c] -> [e]`
+
+**Step 7**: Generalize
+- Free variables: `c`, `e`
+- Final type: `forall c e. (c -> e) -> [c] -> [e]`
+
+In standard notation: `forall a b. (a -> b) -> [a] -> [b]`
+
+## Performance Considerations
+
+<Accordion title="Substitution Optimization">
+Substitutions are applied eagerly during unification to avoid accumulating large substitution chains.
+</Accordion>
+
+<Accordion title="Type Variable Generation">
+Fresh type variables are generated using a simple counter, making variable generation O(1).
+</Accordion>
+
+<Accordion title="Environment Cloning">
+Type environments are cloned for nested scopes. For large programs, this could be optimized using persistent data structures.
+</Accordion>
+
+## See Also
+
+- [Type System](/reference/type-system) - Overview of Ivy's type system
+- [Built-in Types](/reference/builtin-types) - All primitive and composite types
+- [Unification Algorithm](https://en.wikipedia.org/wiki/Unification_(computer_science)) - Wikipedia article

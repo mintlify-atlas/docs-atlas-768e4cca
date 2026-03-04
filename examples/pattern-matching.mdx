@@ -1,0 +1,571 @@
+---
+title: "Pattern Matching"
+description: "Master Ivy's powerful pattern matching for elegant and expressive code"
+icon: "shapes"
+---
+
+## Overview
+
+Pattern matching is one of Ivy's most powerful features. It allows you to destructure data, handle different cases elegantly, and write code that clearly expresses your intent. This guide covers all the ways you can use pattern matching in Ivy.
+
+## Basic Literal Matching
+
+Match on specific values:
+
+```ivy
+fn describe(0) => "zero";
+fn describe(1) => "one";
+fn describe(2) => "two";
+fn describe(n) => "other";
+
+println(describe(0));
+println(describe(1));
+println(describe(5));
+```
+
+**Output:**
+```
+zero
+one
+other
+```
+
+<Note>
+  Patterns are checked from top to bottom. The first matching pattern wins. The variable pattern `n` matches anything, so it acts as a catch-all.
+</Note>
+
+## Matching on Booleans
+
+```ivy
+fn boolToString(true) => "yes";
+fn boolToString(false) => "no";
+
+println(boolToString(1 < 2));
+println(boolToString(5 == 3));
+```
+
+**Output:**
+```
+yes
+no
+```
+
+## How Pattern Matching Works
+
+<Steps>
+  <Step title="Define multiple patterns">
+    Write multiple function definitions with different patterns for the same function name.
+  </Step>
+  
+  <Step title="Top-to-bottom evaluation">
+    When the function is called, Ivy checks each pattern in order from first to last.
+  </Step>
+  
+  <Step title="First match wins">
+    The first pattern that matches is used. Subsequent patterns are ignored.
+  </Step>
+  
+  <Step title="Binding variables">
+    Variable patterns (like `n`) bind the matched value to that name in the function body.
+  </Step>
+</Steps>
+
+## List Pattern Matching
+
+Lists have powerful pattern matching capabilities:
+
+### Matching empty vs non-empty lists
+
+```ivy
+fn isEmpty([]) => true;
+fn isEmpty([_ | _]) => false;
+
+println(isEmpty([]));
+println(isEmpty([1, 2, 3]));
+```
+
+**Output:**
+```
+true
+false
+```
+
+### Destructuring lists with cons pattern
+
+```ivy
+fn head([]) => None;
+fn head([x | _]) => Some(x);
+
+fn tail([]) => None;
+fn tail([_ | xs]) => Some(xs);
+
+println(head([1, 2, 3]));
+println(tail([1, 2, 3]));
+```
+
+**Output:**
+```
+Some(1)
+Some([2, 3])
+```
+
+<Accordion title="Understanding the cons pattern [x | xs]">
+  The cons pattern `[x | xs]` splits a list into:
+  - `x` - the first element (head)
+  - `xs` - the rest of the list (tail)
+  
+  The underscore `_` is a wildcard that matches anything but doesn't bind a variable.
+  
+  This pattern only matches non-empty lists. Empty lists `[]` don't match.
+</Accordion>
+
+### Matching specific list structures
+
+```ivy
+fn describe([]) => "empty";
+fn describe([x]) => "one element";
+fn describe([x, y]) => "two elements";
+fn describe([x, y, z]) => "three elements";
+fn describe(_) => "many elements";
+
+println(describe([]));
+println(describe([1]));
+println(describe([1, 2]));
+println(describe([1, 2, 3, 4]));
+```
+
+**Output:**
+```
+empty
+one element
+two elements
+many elements
+```
+
+## Tuple Pattern Matching
+
+Tuples can be destructured in patterns:
+
+```ivy
+fn firstOfPair((x, _)) => x;
+fn secondOfPair((_, y)) => y;
+
+let pair = (42, "hello");
+println(firstOfPair(pair));
+println(secondOfPair(pair));
+```
+
+**Output:**
+```
+42
+hello
+```
+
+### Swapping tuple elements
+
+```ivy
+fn swap((x, y)) => (y, x);
+
+println(swap((1, 2)));
+println(swap(("foo", "bar")));
+```
+
+**Output:**
+```
+(2, 1)
+(bar, foo)
+```
+
+### Nested tuples
+
+```ivy
+fn first((x, _)) => x;
+fn second((_, (y, _))) => y;
+
+let nested = (1, (2, 3));
+println(first(nested));
+println(second(nested));
+```
+
+**Output:**
+```
+1
+2
+```
+
+## Constructor Pattern Matching
+
+Match on algebraic data types:
+
+```ivy
+type Option<a> =
+| None
+| Some(a);
+
+fn isSome(None) => false;
+fn isSome(Some(_)) => true;
+
+fn unwrapOr(None, default) => default;
+fn unwrapOr(Some(x), _) => x;
+
+println(isSome(None));
+println(isSome(Some(42)));
+println(unwrapOr(None, 99));
+println(unwrapOr(Some(42), 99));
+```
+
+**Output:**
+```
+false
+true
+99
+42
+```
+
+### Result type matching
+
+```ivy
+type Result<T, E> =
+| Ok(T)
+| Err(E);
+
+fn isOk(Ok(_)) => true;
+fn isOk(Err(_)) => false;
+
+fn describe(Ok(value)) => "Success: " ++ show(value);
+fn describe(Err(error)) => "Error: " ++ error;
+
+println(isOk(Ok(42)));
+println(describe(Ok(100)));
+println(describe(Err("Something went wrong")));
+```
+
+**Output:**
+```
+true
+Success: 100
+Error: Something went wrong
+```
+
+## Match Expressions
+
+Use `match` for inline pattern matching:
+
+```ivy
+let value = Some(42);
+
+let result = match value with
+| None -> 0
+| Some(x) -> x * 2
+end;
+
+println(result);
+```
+
+**Output:**
+```
+84
+```
+
+### Matching on lists
+
+```ivy
+let numbers = [1, 2, 3];
+
+let description = match numbers with
+| [] -> "no numbers"
+| [x] -> "one number"
+| [x, y] -> "two numbers"
+| [x | xs] -> "many numbers"
+end;
+
+println(description);
+```
+
+**Output:**
+```
+many numbers
+```
+
+<Note>
+  Match expressions must be exhaustive - all possible cases must be covered. Use a wildcard `_` or variable pattern as a catch-all if needed.
+</Note>
+
+## Guarded Patterns
+
+Add conditions to patterns with guards:
+
+```ivy
+fn classify(n)
+  | n < 0 => "negative"
+  | n == 0 => "zero"
+  | n > 0 and n < 10 => "single digit"
+  | n >= 10 => "multiple digits";
+
+println(classify(-5));
+println(classify(0));
+println(classify(7));
+println(classify(42));
+```
+
+**Output:**
+```
+negative
+zero
+single digit
+multiple digits
+```
+
+### Guards with patterns
+
+```ivy
+fn describe([])
+  => "empty list";
+fn describe([x | xs])
+  | x > 0 => "starts with positive"
+  | x < 0 => "starts with negative"
+  | x == 0 => "starts with zero";
+
+println(describe([]));
+println(describe([5, 1, 2]));
+println(describe([-3, 4]));
+println(describe([0, 1]));
+```
+
+**Output:**
+```
+empty list
+starts with positive
+starts with negative
+starts with zero
+```
+
+<Accordion title="When to use guards vs nested matches?">
+  Use guards when:
+  - You need to check computed conditions
+  - The condition involves comparisons or boolean logic
+  - You want to keep patterns at the top level
+  
+  Use nested matches when:
+  - You're matching on structure (constructors, lists, tuples)
+  - The conditions are based on data shape, not computed values
+</Accordion>
+
+## Nested Pattern Matching
+
+Patterns can be arbitrarily nested:
+
+```ivy
+type Tree<a> =
+| Leaf
+| Node(a, Tree<a>, Tree<a>);
+
+fn countLeaves(Leaf) => 1;
+fn countLeaves(Node(_, left, right)) => countLeaves(left) + countLeaves(right);
+
+let tree = Node(1, Node(2, Leaf, Leaf), Leaf);
+println(countLeaves(tree));
+```
+
+**Output:**
+```
+3
+```
+
+### Matching on nested lists
+
+```ivy
+fn firstTwo([[x, y | _] | _]) => Some((x, y));
+fn firstTwo(_) => None;
+
+println(firstTwo([[1, 2, 3], [4, 5]]));
+println(firstTwo([[1]]));
+```
+
+**Output:**
+```
+Some((1, 2))
+None
+```
+
+## Practical Examples
+
+### Implementing map with pattern matching
+
+```ivy
+fn map(f, []) => [];
+fn map(f, [x | xs]) => [f(x) | map(f, xs)];
+
+fn double(x) => x * 2;
+
+println(map(double, [1, 2, 3, 4]));
+```
+
+**Output:**
+```
+[2, 4, 6, 8]
+```
+
+### Implementing filter
+
+```ivy
+fn filter(pred, []) => [];
+fn filter(pred, [x | xs]) =>
+  if pred(x)
+  then [x | filter(pred, xs)]
+  else filter(pred, xs);
+
+fn isEven(n) => n % 2 == 0;
+
+println(filter(isEven, [1, 2, 3, 4, 5, 6]));
+```
+
+**Output:**
+```
+[2, 4, 6]
+```
+
+### Zip two lists together
+
+```ivy
+fn zip([], _) => [];
+fn zip(_, []) => [];
+fn zip([x | xs], [y | ys]) => [(x, y) | zip(xs, ys)];
+
+println(zip([1, 2, 3], ["a", "b", "c"]));
+```
+
+**Output:**
+```
+[(1, a), (2, b), (3, c)]
+```
+
+### Reverse a list
+
+```ivy
+fn reverseHelper([], acc) => acc;
+fn reverseHelper([x | xs], acc) => reverseHelper(xs, [x | acc]);
+
+fn reverse(xs) => reverseHelper(xs, []);
+
+println(reverse([1, 2, 3, 4, 5]));
+```
+
+**Output:**
+```
+[5, 4, 3, 2, 1]
+```
+
+## Record Pattern Matching
+
+```ivy
+type Point = { x: Int, y: Int };
+
+fn isOrigin(Point { x: 0, y: 0 }) => true;
+fn isOrigin(_) => false;
+
+fn describe(Point { x: x, y: y }) =>
+  "Point at (" ++ show(x) ++ ", " ++ show(y) ++ ")";
+
+let p1 = Point { x: 0, y: 0 };
+let p2 = Point { x: 3, y: 4 };
+
+println(isOrigin(p1));
+println(isOrigin(p2));
+println(describe(p2));
+```
+
+**Output:**
+```
+true
+false
+Point at (3, 4)
+```
+
+## Advanced: As Patterns
+
+Bind the whole value while matching on structure:
+
+```ivy
+fn sumPair(pair as (x, y)) => do {
+  println(pair);
+  x + y
+};
+
+println(sumPair((10, 20)));
+```
+
+**Output:**
+```
+(10, 20)
+30
+```
+
+## Common Patterns
+
+### The accumulator pattern
+
+```ivy
+fn length(xs) => lengthHelper(xs, 0);
+
+fn lengthHelper([], acc) => acc;
+fn lengthHelper([_ | xs], acc) => lengthHelper(xs, acc + 1);
+
+println(length([1, 2, 3, 4, 5]));
+```
+
+**Output:**
+```
+5
+```
+
+### The maybe pattern (Option)
+
+```ivy
+fn safeDivide(_, 0) => None;
+fn safeDivide(x, y) => Some(x / y);
+
+fn describeDivision(None) => "Cannot divide";
+fn describeDivision(Some(x)) => "Result: " ++ show(x);
+
+println(describeDivision(safeDivide(10, 2)));
+println(describeDivision(safeDivide(10, 0)));
+```
+
+**Output:**
+```
+Result: 5
+Cannot divide
+```
+
+## Key Takeaways
+
+- **Multiple definitions** enable pattern matching on function arguments
+- **Top-to-bottom** matching order - first match wins
+- **Destructuring** extracts values from complex data structures
+- **Guards** add conditional logic to patterns
+- **Match expressions** provide inline pattern matching
+- **Exhaustiveness** ensures all cases are handled
+- **Wildcards** (`_`) match anything without binding
+- **Nested patterns** handle complex data structures elegantly
+
+## Best Practices
+
+1. **Order patterns from specific to general** - put catch-all patterns last
+2. **Use wildcards** when you don't need the value
+3. **Keep patterns readable** - don't nest too deeply
+4. **Leverage guards** for computed conditions
+5. **Make matches exhaustive** - handle all cases
+6. **Use descriptive variable names** in patterns
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Recursive Functions" icon="rotate" href="/examples/recursive-functions">
+    Combine pattern matching with recursion
+  </Card>
+  
+  <Card title="Type Inference" icon="wand-magic-sparkles" href="/examples/type-inference">
+    Understand how types flow through patterns
+  </Card>
+</CardGroup>

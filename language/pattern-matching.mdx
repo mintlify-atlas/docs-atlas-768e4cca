@@ -1,0 +1,489 @@
+---
+title: Pattern Matching
+description: Learn to destructure data with Ivy's powerful pattern matching system
+---
+
+Pattern matching is one of Ivy's most powerful features. It allows you to destructure data, dispatch on structure, and ensure exhaustiveness at compile time.
+
+## Match Expressions
+
+The `match` expression examines a value against a series of patterns:
+
+```ivy
+match value with
+| pattern1 -> expression1
+| pattern2 -> expression2
+| pattern3 -> expression3
+end
+```
+
+Example:
+
+```ivy
+let result = match someOption with
+| None -> "nothing"
+| Some(x) -> "got: " ++ show(x)
+end
+```
+
+<Note>
+Patterns are checked in order from top to bottom. The first matching pattern is used.
+</Note>
+
+## Pattern Types
+
+### Literal Patterns
+
+Match specific values:
+
+```ivy
+fn describe(n: Int): String =>
+  match n with
+  | 0 -> "zero"
+  | 1 -> "one"
+  | 2 -> "two"
+  | _ -> "many"
+  end
+
+fn greet(name: String): String =>
+  match name with
+  | "Alice" -> "Hi Alice!"
+  | "Bob" -> "Hey Bob!"
+  | _ -> "Hello, stranger!"
+  end
+```
+
+### Wildcard Pattern
+
+The `_` pattern matches anything and ignores the value:
+
+```ivy
+match x with
+| 0 -> "zero"
+| _ -> "non-zero"  -- Catches everything else
+end
+
+-- Useful in tuples to ignore elements
+match pair with
+| (0, _) -> "first is zero"
+| (_, 0) -> "second is zero"
+| (_, _) -> "neither is zero"
+end
+```
+
+### Variable Patterns
+
+Bind matched values to variables:
+
+```ivy
+match value with
+| x -> x + 1  -- Binds the entire value to 'x'
+end
+
+-- In constructors
+match option with
+| Some(value) -> value  -- Binds inner value to 'value'
+| None -> 0
+end
+```
+
+### Constructor Patterns
+
+Match and destructure algebraic data types:
+
+```ivy
+type Option<a> = | None | Some(a);
+
+match maybeNumber with
+| None -> 0
+| Some(n) -> n * 2
+end
+
+type Result<T, E> = | Ok(T) | Err(E);
+
+match result with
+| Ok(value) -> "Success: " ++ show(value)
+| Err(error) -> "Error: " ++ show(error)
+end
+```
+
+### Tuple Patterns
+
+Destructure tuples:
+
+```ivy
+-- Simple destructuring
+match point with
+| (x, y) -> x + y
+end
+
+-- Nested patterns
+match pair with
+| (0, 0) -> "origin"
+| (x, 0) -> "on x-axis"
+| (0, y) -> "on y-axis"
+| (x, y) -> "general point"
+end
+
+-- Ignore parts with wildcard
+match triple with
+| (x, _, z) -> x + z
+end
+```
+
+### List Patterns
+
+<CodeGroup>
+
+```ivy Empty List
+match xs with
+| [] -> "empty"
+| _ -> "not empty"
+end
+```
+
+```ivy Exact Length
+match xs with
+| [a] -> "one element: " ++ show(a)
+| [a, b] -> "two elements"
+| [a, b, c] -> "three elements"
+| _ -> "other"
+end
+```
+
+```ivy Cons Pattern
+-- Match head and tail
+match xs with
+| [] -> 0
+| [head | tail] -> head + sum(tail)
+end
+
+-- Match multiple elements
+match xs with
+| [x, y | rest] -> x + y
+| [x | _] -> x
+| [] -> 0
+end
+```
+
+</CodeGroup>
+
+### Record Patterns
+
+Destructure record types:
+
+```ivy
+type Person = { name: String, age: Int };
+
+match person with
+| Person { name, age } -> name ++ " is " ++ show(age)
+end
+
+-- Match specific field values
+match person with
+| Person { name: "Alice", age } -> "It's Alice, age " ++ show(age)
+| Person { name, age: 18 } -> name ++ " just turned 18"
+| Person { name, age } -> "Regular person"
+end
+
+-- Ignore fields with wildcard
+match person with
+| Person { name, age: _ } -> "Hello, " ++ name
+end
+```
+
+### Or Patterns
+
+Match multiple patterns with the same handler:
+
+```ivy
+match value with
+| 1 | 2 | 3 -> "small"
+| 4 | 5 | 6 -> "medium"
+| _ -> "large"
+end
+
+-- With constructors
+match result with
+| Ok(_) | Err("minor") -> "proceed"
+| Err(_) -> "stop"
+end
+```
+
+## Pattern Matching in Functions
+
+Function parameters can use patterns directly:
+
+```ivy
+-- Pattern match on constructors
+fn unwrapOr(None, default) => default;
+fn unwrapOr(Some(x), _) => x;
+
+-- Pattern match on lists
+fn head([]): Option<a> => None;
+fn head([x | _]): Option<a> => Some(x);
+
+fn tail([]): Option<[a]> => None;
+fn tail([_ | xs]): Option<[a]> => Some(xs);
+
+-- Pattern match on tuples
+fn fst((x, _)) => x;
+fn snd((_, y)) => y;
+
+fn swap((x, y)) => (y, x);
+```
+
+<Tip>
+Function pattern matching is just syntactic sugar for a match expression in the function body.
+</Tip>
+
+## Nested Patterns
+
+Patterns can be arbitrarily nested:
+
+```ivy
+-- Nested constructors
+match result with
+| Ok(Some(value)) -> "Got value: " ++ show(value)
+| Ok(None) -> "Got nothing"
+| Err(error) -> "Error: " ++ error
+end
+
+-- Nested lists
+match lists with
+| [[x | _] | _] -> "First element of first list: " ++ show(x)
+| [[] | _] -> "First list is empty"
+| [] -> "No lists"
+end
+
+-- Nested tuples
+match nested with
+| ((x, y), (z, w)) -> x + y + z + w
+| _ -> 0
+end
+```
+
+## Exhaustiveness Checking
+
+The compiler ensures all cases are handled:
+
+```ivy
+-- Error: non-exhaustive match (missing None case)
+match option with
+| Some(x) -> x
+end
+
+-- Fixed: all cases covered
+match option with
+| Some(x) -> x
+| None -> 0
+end
+
+-- Wildcard covers remaining cases
+match option with
+| Some(42) -> "the answer"
+| _ -> "something else"
+end
+```
+
+<Note>
+Exhaustiveness checking prevents bugs by ensuring you handle all possible cases at compile time.
+</Note>
+
+## Common Patterns
+
+### Option Handling
+
+```ivy
+-- Unwrap with default
+fn unwrapOr(opt: Option<a>, default: a): a =>
+  match opt with
+  | Some(x) -> x
+  | None -> default
+  end
+
+-- Transform inner value
+fn mapOption(f: a -> b, opt: Option<a>): Option<b> =>
+  match opt with
+  | Some(x) -> Some(f(x))
+  | None -> None
+  end
+
+-- Chain operations
+fn flatMapOption(f: a -> Option<b>, opt: Option<a>): Option<b> =>
+  match opt with
+  | Some(x) -> f(x)
+  | None -> None
+  end
+```
+
+### Result Handling
+
+```ivy
+-- Transform success value
+fn mapOk(f: T -> U, result: Result<T, E>): Result<U, E> =>
+  match result with
+  | Ok(x) -> Ok(f(x))
+  | Err(e) -> Err(e)
+  end
+
+-- Transform error value
+fn mapErr(f: E -> F, result: Result<T, E>): Result<T, F> =>
+  match result with
+  | Ok(x) -> Ok(x)
+  | Err(e) -> Err(f(e))
+  end
+```
+
+### List Processing
+
+<CodeGroup>
+
+```ivy Length
+fn length([]): Int => 0;
+fn length([_ | xs]): Int => 1 + length(xs);
+```
+
+```ivy Map
+fn map(f: a -> b, []): [b] => [];
+fn map(f: a -> b, [x | xs]): [b] => 
+  [f(x) | map(f, xs)];
+```
+
+```ivy Filter
+fn filter(pred: a -> Bool, []): [a] => [];
+fn filter(pred: a -> Bool, [x | xs]): [a] =>
+  if pred(x) 
+  then [x | filter(pred, xs)] 
+  else filter(pred, xs);
+```
+
+```ivy Fold
+fn foldl(f: b -> a -> b, acc: b, []): b => acc;
+fn foldl(f: b -> a -> b, acc: b, [x | xs]): b => 
+  foldl(f, f(acc, x), xs);
+```
+
+</CodeGroup>
+
+### Tree Traversal
+
+```ivy
+type Tree<a> =
+| Leaf(a)
+| Node(Tree<a>, Tree<a>)
+;
+
+fn treeSize(tree: Tree<a>): Int =>
+  match tree with
+  | Leaf(_) -> 1
+  | Node(left, right) -> treeSize(left) + treeSize(right)
+  end
+
+fn treeMap(f: a -> b, tree: Tree<a>): Tree<b> =>
+  match tree with
+  | Leaf(x) -> Leaf(f(x))
+  | Node(left, right) -> Node(treeMap(f, left), treeMap(f, right))
+  end
+```
+
+## Pattern Matching vs If-Else
+
+Pattern matching is often clearer than nested conditionals:
+
+<CodeGroup>
+
+```ivy Pattern Matching (Preferred)
+fn describe(xs: [Int]): String =>
+  match xs with
+  | [] -> "empty"
+  | [x] -> "singleton: " ++ show(x)
+  | [x, y] -> "pair: " ++ show(x) ++ ", " ++ show(y)
+  | _ -> "longer list"
+  end
+```
+
+```ivy If-Else (Verbose)
+fn describe(xs: [Int]): String =>
+  if isEmpty?(xs) then "empty"
+  else if length(xs) == 1 then 
+    "singleton: " ++ show(head(xs))
+  else if length(xs) == 2 then
+    "pair: " ++ show(nth(xs, 0)) ++ ", " ++ show(nth(xs, 1))
+  else "longer list"
+```
+
+</CodeGroup>
+
+## Let Patterns
+
+Destructure in let bindings:
+
+```ivy
+-- Tuple destructuring
+let (x, y) = (10, 20)
+
+-- List destructuring
+let [first, second | rest] = [1, 2, 3, 4, 5]
+
+-- Constructor destructuring (careful: may panic!)
+let Some(value) = maybeNumber  -- Runtime error if None
+
+-- Record destructuring
+let Person { name, age } = person
+```
+
+<Note>
+Let patterns must match or they will cause a runtime error. Use match expressions for safer destructuring of sum types.
+</Note>
+
+## Best Practices
+
+### Order Patterns from Specific to General
+
+```ivy
+-- Good: specific cases first
+match xs with
+| [] -> "empty"
+| [x] -> "one"
+| _ -> "many"
+end
+
+-- Bad: general case catches everything
+match xs with
+| _ -> "many"      -- This always matches!
+| [] -> "empty"    -- Never reached
+| [x] -> "one"     -- Never reached
+end
+```
+
+### Use Meaningful Variable Names
+
+```ivy
+-- Good: clear intent
+match person with
+| Person { name, age } -> name ++ " is " ++ show(age)
+end
+
+-- Poor: unclear
+match person with
+| Person { a, b } -> a ++ " is " ++ show(b)
+end
+```
+
+### Leverage Exhaustiveness Checking
+
+```ivy
+-- Compiler ensures all variants are handled
+match ordering with
+| Less -> -1
+| Equal -> 0
+| Greater -> 1
+end  -- Compiler error if any case is missing
+```
+
+## Next Steps
+
+- [Types](/language/types) - Learn about algebraic data types
+- [Functions](/language/functions) - Use patterns in function definitions
+- [Language Basics](/language/basics) - Review fundamental syntax

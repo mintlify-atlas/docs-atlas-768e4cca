@@ -1,0 +1,405 @@
+---
+title: "Type Inference"
+description: "Discover how Ivy automatically determines types without explicit annotations"
+icon: "wand-magic-sparkles"
+---
+
+## Overview
+
+Ivy features powerful type inference that automatically determines the types of values, variables, and functions without requiring explicit type annotations. This makes code cleaner while maintaining type safety.
+
+## Basic Type Inference
+
+Ivy infers types from the values you assign:
+
+```ivy
+let x = 42;           -- Inferred as Int
+let y = 3.14;         -- Inferred as Float
+let s = "hello";      -- Inferred as String
+let b = true;         -- Inferred as Bool
+let u = ();           -- Inferred as ()
+
+println(x);
+println(y);
+println(s);
+println(b);
+```
+
+**Output:**
+```
+42
+3.14
+hello
+true
+```
+
+<Note>
+  You never need to write `let x: Int = 42`. Ivy figures out that `42` is an `Int` automatically.
+</Note>
+
+## How It Works
+
+<Steps>
+  <Step title="Literal types">
+    Ivy knows the type of every literal:
+    - `42` is an `Int`
+    - `3.14` is a `Float`
+    - `"hello"` is a `String`
+    - `true` and `false` are `Bool`
+    - `()` is the unit type
+  </Step>
+  
+  <Step title="Expression types">
+    Types flow through expressions:
+    - If `x` is `Int` and `y` is `Int`, then `x + y` is `Int`
+    - If `f` takes `Int -> String`, then `f(42)` is `String`
+  </Step>
+  
+  <Step title="Unification">
+    When types need to match (like function arguments), Ivy checks compatibility and reports errors if types don't align.
+  </Step>
+</Steps>
+
+## Function Return Type Inference
+
+Functions infer their return type from their body:
+
+```ivy
+fn add(x, y) => x + y;           -- Int -> Int -> Int
+fn greet(name) => "Hello, " ++ name;  -- String -> String
+fn isEven(n) => n % 2 == 0;      -- Int -> Bool
+
+println(add(10, 20));
+println(greet("Alice"));
+println(isEven(7));
+```
+
+**Output:**
+```
+30
+Hello, Alice
+false
+```
+
+### Type inference across patterns
+
+```ivy
+fn factorial(0) => 1;
+fn factorial(n) => n * factorial(n - 1);
+
+-- Inferred as: Int -> Int
+println(factorial(5));
+```
+
+**Output:**
+```
+120
+```
+
+Ivy infers that both patterns return `Int`, so the function type is `Int -> Int`.
+
+## List Type Inference
+
+List types are inferred from their elements:
+
+```ivy
+let numbers = [1, 2, 3, 4, 5];       -- Inferred as [Int]
+let words = ["foo", "bar", "baz"];   -- Inferred as [String]
+let flags = [true, false, true];      -- Inferred as [Bool]
+
+println(numbers);
+println(words);
+println(flags);
+```
+
+**Output:**
+```
+[1, 2, 3, 4, 5]
+[foo, bar, baz]
+[true, false, true]
+```
+
+<Accordion title="What about empty lists?">
+  Empty lists `[]` can be inferred from context. When you use an empty list in a function that expects `[Int]`, Ivy knows it should be an `[Int]`.
+  
+  ```ivy
+  fn sum([]) => 0;
+  fn sum([x | xs]) => x + sum(xs);
+  
+  sum([]);  -- Empty list inferred as [Int]
+  ```
+</Accordion>
+
+## Tuple Type Inference
+
+Tuples infer types from all their elements:
+
+```ivy
+let pair = (42, "hello");            -- Inferred as (Int, String)
+let triple = (1, 2.5, true);         -- Inferred as (Int, Float, Bool)
+let nested = ((1, 2), (3, 4));       -- Inferred as ((Int, Int), (Int, Int))
+
+println(pair);
+println(triple);
+println(nested);
+```
+
+**Output:**
+```
+(42, hello)
+(1, 2.5, true)
+((1, 2), (3, 4))
+```
+
+## Option Type Inference
+
+Constructors like `Some` and `None` help Ivy infer the full type:
+
+```ivy
+let x = Some(42);        -- Inferred as Option<Int>
+let y = None;            -- Inferred as Option<a> (polymorphic)
+
+fn unwrapOr(None, default) => default;
+fn unwrapOr(Some(x), _) => x;
+
+println(unwrapOr(x, 0));
+println(unwrapOr(y, 99));
+```
+
+**Output:**
+```
+42
+99
+```
+
+<Note>
+  `Some(42)` tells Ivy this is `Option<Int>` because `42` is an `Int`. The type parameter is inferred from the wrapped value.
+</Note>
+
+## Polymorphic Function Inference
+
+Functions can be polymorphic (work with multiple types):
+
+```ivy
+fn head([]) => None;
+fn head([x | _]) => Some(x);
+
+-- Inferred as: [a] -> Option<a>
+-- Works with any list type!
+
+println(head([1, 2, 3]));
+println(head(["a", "b", "c"]));
+println(head([]));
+```
+
+**Output:**
+```
+Some(1)
+Some(a)
+None
+```
+
+### Generic list operations
+
+```ivy
+fn map(f, []) => [];
+fn map(f, [x | xs]) => [f(x) | map(f, xs)];
+
+-- Inferred as: (a -> b) -> [a] -> [b]
+
+fn double(x) => x * 2;
+fn shout(s) => s ++ "!";
+
+println(map(double, [1, 2, 3]));
+println(map(shout, ["hello", "world"]));
+```
+
+**Output:**
+```
+[2, 4, 6]
+[hello!, world!]
+```
+
+## Higher-Order Function Inference
+
+Ivy infers types for functions that take or return functions:
+
+```ivy
+fn apply(f, x) => f(x);
+-- Inferred as: (a -> b) -> a -> b
+
+fn increment(x) => x + 1;
+fn exclaim(s) => s ++ "!";
+
+println(apply(increment, 5));
+println(apply(exclaim, "Hello"));
+```
+
+**Output:**
+```
+6
+Hello!
+```
+
+### Function composition
+
+```ivy
+fn compose(f, g) => fn (x) => f(g(x));
+-- Inferred as: (b -> c) -> (a -> b) -> a -> c
+
+fn double(x) => x * 2;
+fn addTen(x) => x + 10;
+
+let doubleThenAdd = compose(addTen, double);
+
+println(doubleThenAdd(5));  -- (5 * 2) + 10 = 20
+```
+
+**Output:**
+```
+20
+```
+
+## Type Inference with Pattern Matching
+
+Pattern matching preserves and refines types:
+
+```ivy
+type Color = | Red | Green | Blue;
+
+fn colorName(Red) => "red";
+fn colorName(Green) => "green";
+fn colorName(Blue) => "blue";
+
+-- Inferred as: Color -> String
+
+println(colorName(Red));
+println(colorName(Blue));
+```
+
+**Output:**
+```
+red
+blue
+```
+
+### Matching on nested structures
+
+```ivy
+type Tree<a> =
+| Leaf
+| Node(a, Tree<a>, Tree<a>);
+
+fn depth(Leaf) => 0;
+fn depth(Node(_, left, right)) => 1 + max(depth(left), depth(right));
+
+fn max(x, y) => if x > y then x else y;
+
+let tree = Node(1, Node(2, Leaf, Leaf), Leaf);
+println(depth(tree));
+```
+
+**Output:**
+```
+2
+```
+
+<Accordion title="How does inference work with recursive types?">
+  Ivy's type inference handles recursive types by:
+  1. Recognizing the type constructor (`Node`, `Leaf`)
+  2. Inferring the type parameter from usage (`a` in `Tree<a>`)
+  3. Ensuring consistency across all branches of pattern matching
+  
+  The `depth` function is inferred as `Tree<a> -> Int` - it works for trees containing any type.
+</Accordion>
+
+## Explicit Type Annotations (Optional)
+
+While not required, you can add type annotations for documentation:
+
+```ivy
+fn length(xs: [a]): Int => match xs with
+  | [] -> 0
+  | [_ | rest] -> 1 + length(rest)
+end;
+
+println(length([1, 2, 3, 4]));
+println(length(["a", "b"]));
+```
+
+**Output:**
+```
+4
+2
+```
+
+<Note>
+  Type annotations are primarily for:
+  - Documentation
+  - Catching errors earlier
+  - Constraining polymorphic functions
+  
+  But Ivy will infer the same types even without them!
+</Note>
+
+## Complex Inference Example
+
+Here's a complete example showing multiple inference features:
+
+```ivy
+type Result<T, E> =
+| Ok(T)
+| Err(E);
+
+fn mapResult(f, Ok(x)) => Ok(f(x));
+fn mapResult(f, Err(e)) => Err(e);
+
+-- Inferred as: (a -> b) -> Result<a, e> -> Result<b, e>
+
+fn divide(x, 0) => Err("Division by zero");
+fn divide(x, y) => Ok(x / y);
+
+fn double(x) => x * 2;
+
+let result = divide(10, 2);
+let mapped = mapResult(double, result);
+
+println(result);
+println(mapped);
+```
+
+**Output:**
+```
+Ok(5)
+Ok(10)
+```
+
+## Key Takeaways
+
+- **No type annotations needed** for most code
+- **Types flow** from literals through expressions
+- **Pattern matching** refines types automatically
+- **Polymorphic functions** work with multiple types
+- **Type errors** are caught early, even without annotations
+- **Optional annotations** can be added for clarity
+- **Generic types** are inferred from usage
+
+## Benefits of Type Inference
+
+1. **Less boilerplate** - Write less code
+2. **Easier refactoring** - Types update automatically
+3. **Still type-safe** - Errors caught at compile time
+4. **More readable** - Focus on logic, not types
+5. **Gradual typing** - Add annotations where helpful
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Pattern Matching" icon="shapes" href="/examples/pattern-matching">
+    Learn advanced pattern matching techniques
+  </Card>
+  
+  <Card title="Recursive Functions" icon="rotate" href="/examples/recursive-functions">
+    Master recursive programming patterns
+  </Card>
+</CardGroup>

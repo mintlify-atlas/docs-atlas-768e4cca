@@ -1,0 +1,460 @@
+---
+title: Modules
+description: Organize code with Ivy's module system - imports, exports, and code organization
+---
+
+Ivy's module system allows you to organize code into separate files, control visibility, and manage dependencies between components.
+
+## Module Declaration
+
+Every Ivy file should start with a module declaration:
+
+```ivy
+module MyModule;
+
+-- Your code here
+```
+
+The module name should match the file name. For example, `MyModule` should be in a file named `mymodule.ivy` or `MyModule.ivy`.
+
+<Note>
+Module names must start with an uppercase letter. Files are matched case-insensitively, but by convention use lowercase filenames.
+</Note>
+
+## Public and Private Declarations
+
+By default, all declarations are private to the module. Use `pub` to make them public:
+
+```ivy
+module Math;
+
+-- Private: only visible within this module
+fn helper(x: Int): Int => x + 1
+
+-- Public: exported and available to importers
+pub fn add(x: Int, y: Int): Int => x + y
+
+pub fn multiply(x: Int, y: Int): Int => x * y
+
+-- Public type
+pub type Point = {
+  x: Int,
+  y: Int
+};
+```
+
+### What Can Be Public?
+
+<CodeGroup>
+
+```ivy Functions
+module Utils;
+
+pub fn publicFunc(x: Int): Int => x * 2
+
+fn privateFunc(x: Int): Int => x + 1  -- Not exported
+```
+
+```ivy Types
+module Types;
+
+-- Public type with public constructors
+pub type Option<a> =
+| None
+| Some(a)
+;
+
+-- Private type
+type Internal = { data: Int };
+```
+
+```ivy Values
+module Constants;
+
+pub let pi: Float = 3.14159
+pub let maxSize: Int = 1000
+
+let secret: String = "hidden"  -- Not exported
+```
+
+</CodeGroup>
+
+## Import Statements
+
+Import other modules to use their public declarations.
+
+### Qualified Import
+
+Import a module and access its members with the module name:
+
+```ivy
+import Math
+
+let result = Math.add(5, 3)
+let product = Math.multiply(2, 4)
+```
+
+### Import with Alias
+
+Import a module with a custom name:
+
+```ivy
+import Math as M
+
+let result = M.add(5, 3)
+let product = M.multiply(2, 4)
+```
+
+### Import All
+
+Import all public members directly into scope:
+
+```ivy
+import Math.*
+
+let result = add(5, 3)       -- No prefix needed
+let product = multiply(2, 4)
+```
+
+<Note>
+Use `import *` sparingly to avoid name collisions. Prefer qualified imports for clarity.
+</Note>
+
+### Import Specific Items
+
+Import only selected members:
+
+```ivy
+import Math (add, multiply)
+
+let result = add(5, 3)       -- Imported directly
+let product = multiply(2, 4)
+-- Math.subtract(10, 5)      -- Error: not imported
+```
+
+## Import Syntax Summary
+
+<Tabs>
+  <Tab title="Qualified">
+  ```ivy
+  import List
+  
+  let xs = List.map(f, [1, 2, 3])
+  let ys = List.filter(pred, xs)
+  ```
+  </Tab>
+  
+  <Tab title="Aliased">
+  ```ivy
+  import List as L
+  
+  let xs = L.map(f, [1, 2, 3])
+  let ys = L.filter(pred, xs)
+  ```
+  </Tab>
+  
+  <Tab title="All">
+  ```ivy
+  import List.*
+  
+  let xs = map(f, [1, 2, 3])
+  let ys = filter(pred, xs)
+  ```
+  </Tab>
+  
+  <Tab title="Selective">
+  ```ivy
+  import List (map, filter, fold)
+  
+  let xs = map(f, [1, 2, 3])
+  let ys = filter(pred, xs)
+  let sum = foldl(add, 0, xs)
+  ```
+  </Tab>
+</Tabs>
+
+## Module Resolution
+
+Ivy searches for modules in specific locations:
+
+1. **Standard library**: Built-in modules like `Prelude`, `List`, `Math`
+2. **Search paths**: Directories specified via compiler flags or environment
+3. **Current directory**: Relative to the current file
+
+### File Naming
+
+Module paths map to file paths:
+
+```ivy
+-- Module declaration
+import Data.List
+
+-- Searches for:
+-- 1. data/list.ivy
+-- 2. Data/List.ivy  
+-- in each search path
+```
+
+<Tip>
+By convention, use lowercase filenames (e.g., `data/list.ivy`) to avoid case-sensitivity issues across operating systems.
+</Tip>
+
+## The Prelude
+
+The `Prelude` module is automatically imported into every file unless explicitly disabled with `--no-prelude`.
+
+It provides:
+
+- Core types: `Option`, `Result`, `Ordering`
+- List functions: `map`, `filter`, `foldl`, `foldr`
+- Utility functions: `id`, `const`, `flip`, `compose`
+- I/O functions: `print`, `println`
+
+```ivy
+-- These are available without import:
+let doubled = map(fn (x) => x * 2, [1, 2, 3])
+let result = match Some(42) with
+  | None -> 0
+  | Some(x) -> x
+end
+```
+
+## Circular Imports
+
+Ivy detects circular imports at compile time:
+
+```ivy
+-- a.ivy
+import B
+-- Error: circular import detected
+
+-- b.ivy  
+import A
+```
+
+To break circular dependencies:
+
+- Extract shared code into a third module
+- Use forward declarations (if available)
+- Restructure your module hierarchy
+
+## Standard Library Modules
+
+Ivy provides several standard library modules:
+
+<CodeGroup>
+
+```ivy Prelude
+import Prelude.*  -- Usually auto-imported
+
+-- Core types: Option, Result, Ordering
+-- Core functions: map, filter, fold, etc.
+```
+
+```ivy List
+import List
+
+let reversed = List.reverse([1, 2, 3])
+let nth = List.nth([10, 20, 30], 1)
+let zipped = List.zip([1, 2], ["a", "b"])
+```
+
+```ivy Math
+import Math
+
+let abs = Math.abs(-5)
+let factorial = Math.factorial(5)
+let isPrime = Math.prime?(7)
+```
+
+```ivy String
+import String
+
+let upper = String.toUpper("hello")
+let parts = String.split("a,b,c", ",")
+let joined = String.join(["a", "b"], "-")
+```
+
+</CodeGroup>
+
+## Example Module Structure
+
+A typical Ivy project might look like:
+
+```
+project/
+├── main.ivy           -- Entry point
+├── lib/
+│   ├── utils.ivy      -- Utility functions
+│   ├── types.ivy      -- Shared types
+│   └── data/
+│       ├── list.ivy   -- List utilities
+│       └── tree.ivy   -- Tree data structure
+└── tests/
+    └── test_utils.ivy -- Unit tests
+```
+
+### main.ivy
+
+```ivy
+module Main;
+
+import Lib.Utils
+import Lib.Types
+import Lib.Data.List as L
+
+fn main(): () => do {
+  let result = Utils.process([1, 2, 3]);
+  println(result)
+}
+```
+
+### lib/utils.ivy
+
+```ivy
+module Lib.Utils;
+
+import Lib.Types
+
+pub fn process(xs: [Int]): [Int] =>
+  map(fn (x) => x * 2, xs)
+
+fn helper(x: Int): Int => x + 1  -- Private
+```
+
+### lib/types.ivy
+
+```ivy
+module Lib.Types;
+
+pub type User = {
+  id: Int,
+  name: String
+};
+
+pub type Status =
+| Active
+| Inactive
+;
+```
+
+## Best Practices
+
+### Keep Modules Focused
+
+Each module should have a clear, single responsibility:
+
+```ivy
+-- Good: focused modules
+module String.Utils;  -- String utilities only
+module Data.Tree;     -- Tree data structure only
+
+-- Poor: mixed concerns
+module Everything;    -- Everything in one file
+```
+
+### Use Qualified Imports for Clarity
+
+```ivy
+-- Good: clear where functions come from
+import List
+import String
+
+let processed = List.map(String.toUpper, words)
+
+-- Less clear: ambiguous origins
+import List.*
+import String.*
+
+let processed = map(toUpper, words)  -- Which map?
+```
+
+### Export Minimal Interface
+
+```ivy
+module Counter;
+
+-- Internal implementation (private)
+type State = { count: Int };
+
+fn makeState(): State => { count: 0 }
+
+-- Public interface only
+pub type Counter = { state: State };
+
+pub fn new(): Counter => { state: makeState() }
+
+pub fn increment(c: Counter): Counter => 
+  { state: { count: c.state.count + 1 } }
+
+pub fn value(c: Counter): Int => c.state.count
+```
+
+### Organize by Feature
+
+```
+-- Good: feature-based organization
+user/
+  ├── types.ivy      -- User types
+  ├── validation.ivy -- User validation
+  └── db.ivy         -- User database ops
+
+-- Less ideal: technical grouping
+types/
+  └── user.ivy
+validation/
+  └── user.ivy  
+db/
+  └── user.ivy
+```
+
+## Module Exports
+
+When you import a module, you get access to all `pub` declarations:
+
+```ivy
+-- math.ivy
+module Math;
+
+pub fn add(x: Int, y: Int): Int => x + y
+pub fn multiply(x: Int, y: Int): Int => x * y
+fn helper(x: Int): Int => x + 1  -- Not exported
+
+-- main.ivy
+import Math
+
+let sum = Math.add(5, 3)        -- OK
+let product = Math.multiply(2, 4) -- OK
+let result = Math.helper(10)     -- Error: helper is private
+```
+
+## Re-exporting
+
+Modules can re-export items from other modules:
+
+```ivy
+module Collections;
+
+import List
+import Tree
+import Map
+
+-- Re-export everything
+pub import List.*
+pub import Tree.*
+pub import Map.*
+
+-- Now users can do:
+-- import Collections
+-- Collections.List.map(...)
+```
+
+<Note>
+Re-exporting is useful for creating facade modules that group related functionality.
+</Note>
+
+## Next Steps
+
+- [Functions](/language/functions) - Learn about public vs. private functions
+- [Types](/language/types) - Understand public type definitions
+- [Language Basics](/language/basics) - Review core syntax

@@ -1,0 +1,418 @@
+---
+title: 'Convert Module'
+description: 'Type conversion functions between different types'
+---
+
+The Convert module provides functions for converting between different data types in Ivy. It includes both safe and unsafe conversion functions.
+
+```ivy
+import Convert;
+```
+
+## Numeric Conversions
+
+### floatFromInt
+```ivy
+pub fn floatFromInt(n: Int): Float
+```
+Converts an integer to a floating-point number.
+
+**Example:**
+```ivy
+import Convert;
+
+Convert.floatFromInt(42)    -- 42.0
+Convert.floatFromInt(-10)   -- -10.0
+Convert.floatFromInt(0)     -- 0.0
+```
+
+### floatToInt
+```ivy
+pub fn floatToInt(f: Float): Int
+```
+Converts a floating-point number to an integer by **truncating toward zero** (removes decimal part).
+
+**Example:**
+```ivy
+import Convert;
+
+Convert.floatToInt(3.9)    -- 3
+Convert.floatToInt(-2.1)   -- -2
+Convert.floatToInt(5.0)    -- 5
+```
+
+<Note>
+  For other rounding behaviors, use `Math.floor()`, `Math.ceil()`, or `Math.round()`.
+</Note>
+
+## String Conversions
+
+### intToString
+```ivy
+pub fn intToString(n: Int): String
+```
+Converts an integer to its string representation.
+
+**Example:**
+```ivy
+import Convert;
+
+Convert.intToString(42)    -- "42"
+Convert.intToString(-10)   -- "-10"
+Convert.intToString(0)     -- "0"
+```
+
+### floatToString
+```ivy
+pub fn floatToString(f: Float): String
+```
+Converts a floating-point number to its string representation.
+
+**Example:**
+```ivy
+import Convert;
+
+Convert.floatToString(3.14)    -- "3.14"
+Convert.floatToString(-2.5)    -- "-2.5"
+Convert.floatToString(42.0)    -- "42.0"
+```
+
+### boolToString
+```ivy
+pub fn boolToString(b: Bool): String
+```
+Converts a boolean to its string representation.
+
+**Example:**
+```ivy
+import Convert;
+
+Convert.boolToString(true)   -- "true"
+Convert.boolToString(false)  -- "false"
+```
+
+## Parsing from Strings (Unsafe)
+
+<Warning>
+  These functions throw runtime errors if parsing fails. Use the safe `try*` variants for production code.
+</Warning>
+
+### stringToInt
+```ivy
+pub fn stringToInt(s: String): Int
+```
+Parses a string to an integer. **Throws an error** if the string is not a valid integer.
+
+**Example:**
+```ivy
+import Convert;
+
+Convert.stringToInt("42")      -- 42
+Convert.stringToInt("-10")     -- -10
+Convert.stringToInt("  123  ")  -- 123 (whitespace is trimmed)
+Convert.stringToInt("hello")   -- Runtime error!
+```
+
+### stringToFloat
+```ivy
+pub fn stringToFloat(s: String): Float
+```
+Parses a string to a floating-point number. **Throws an error** if the string is not a valid float.
+
+**Example:**
+```ivy
+import Convert;
+
+Convert.stringToFloat("3.14")   -- 3.14
+Convert.stringToFloat("-2.5")  -- -2.5
+Convert.stringToFloat("42")    -- 42.0
+Convert.stringToFloat("abc")   -- Runtime error!
+```
+
+## Parsing from Strings (Safe)
+
+These functions return `Option` types, making them safe for use when input is untrusted.
+
+### tryStringToInt
+```ivy
+pub fn tryStringToInt(s: String): Option<Int>
+```
+Attempts to parse a string to an integer. Returns `None` on failure.
+
+**Example:**
+```ivy
+import Convert;
+
+match Convert.tryStringToInt("42") with
+| Some(n) -> println("Parsed: " ++ show(n))
+| None -> println("Parse error")
+end;
+
+Convert.tryStringToInt("123")    -- Some(123)
+Convert.tryStringToInt("hello")  -- None
+Convert.tryStringToInt("3.14")   -- None (not an integer)
+```
+
+### tryStringToFloat
+```ivy
+pub fn tryStringToFloat(s: String): Option<Float>
+```
+Attempts to parse a string to a floating-point number. Returns `None` on failure.
+
+**Example:**
+```ivy
+import Convert;
+
+match Convert.tryStringToFloat("3.14") with
+| Some(f) -> println("Parsed: " ++ show(f))
+| None -> println("Parse error")
+end;
+
+Convert.tryStringToFloat("3.14")   -- Some(3.14)
+Convert.tryStringToFloat("42")     -- Some(42.0)
+Convert.tryStringToFloat("hello")  -- None
+```
+
+## Boolean Conversions
+
+### boolToInt
+```ivy
+pub fn boolToInt(b: Bool): Int
+```
+Converts a boolean to an integer (`true` = 1, `false` = 0).
+
+**Example:**
+```ivy
+import Convert;
+
+Convert.boolToInt(true)   -- 1
+Convert.boolToInt(false)  -- 0
+```
+
+### intToBool
+```ivy
+pub fn intToBool(n: Int): Bool
+```
+Converts an integer to a boolean (0 = `false`, anything else = `true`).
+
+**Example:**
+```ivy
+import Convert;
+
+Convert.intToBool(0)    -- false
+Convert.intToBool(1)    -- true
+Convert.intToBool(42)   -- true
+Convert.intToBool(-1)   -- true
+```
+
+## Common Patterns
+
+<Accordion title="Safe user input parsing">
+```ivy
+import Convert;
+
+fn getUserAge(): Option<Int> => do {
+  println("Enter your age: ");
+  let input = readLine();
+  Convert.tryStringToInt(input)
+};
+
+match getUserAge() with
+| Some(age) -> println("You are " ++ show(age) ++ " years old")
+| None -> println("Invalid age entered")
+end;
+```
+</Accordion>
+
+<Accordion title="Parsing with defaults">
+```ivy
+import Convert;
+
+fn parseWithDefault(s: String, default: Int): Int =>
+  unwrapOr(Convert.tryStringToInt(s), default);
+
+let age = parseWithDefault("25", 0);    -- 25
+let age = parseWithDefault("abc", 0);   -- 0 (default)
+```
+</Accordion>
+
+<Accordion title="Converting lists of strings to numbers">
+```ivy
+import Convert;
+import List;
+
+let stringNums = ["1", "2", "3", "4", "5"];
+
+-- Using unsafe conversion (only if you're sure they're valid)
+let numbers = List.map(Convert.stringToInt, stringNums);
+-- [1, 2, 3, 4, 5]
+
+-- Using safe conversion (filters out invalid entries)
+let safeNumbers = stringNums
+  |> List.map(Convert.tryStringToInt)
+  |> List.filter(some?)
+  |> List.map(unwrap);
+```
+</Accordion>
+
+<Accordion title="Building formatted output">
+```ivy
+import Convert;
+import String;
+
+fn formatPrice(dollars: Int, cents: Int): String =>
+  "$" ++ Convert.intToString(dollars) ++ "." ++ Convert.intToString(cents);
+
+let price = formatPrice(19, 99);  -- "$19.99"
+
+fn formatPercent(value: Float): String =>
+  Convert.floatToString(value) ++ "%";
+
+let percent = formatPercent(23.5);  -- "23.5%"
+```
+</Accordion>
+
+<Accordion title="Reading CSV numeric data">
+```ivy
+import Convert;
+import String;
+import List;
+import File;
+
+let csvData = File.readFile("data.csv");
+let rows = String.split(csvData, "\n");
+
+-- Parse first column as integers (skip header)
+let values = rows
+  |> drop(1)
+  |> List.map(fn (row) => do {
+      let cols = String.split(row, ",");
+      match head(cols) with
+      | Some(first) -> Convert.tryStringToInt(first)
+      | None -> None
+      end
+    })
+  |> List.filter(some?)
+  |> List.map(unwrap);
+```
+</Accordion>
+
+<Accordion title="Type conversion helpers">
+```ivy
+import Convert;
+
+-- Convert any showable value to string
+fn toString(x: a): String where Show<a> => show(x);
+
+-- Safe float parsing with error message
+fn parseFloat(s: String): Result<Float, String> =>
+  match Convert.tryStringToFloat(s) with
+  | Some(f) -> Ok(f)
+  | None -> Err("Invalid float: " ++ s)
+  end;
+
+-- Safe int parsing with error message
+fn parseInt(s: String): Result<Int, String> =>
+  match Convert.tryStringToInt(s) with
+  | Some(n) -> Ok(n)
+  | None -> Err("Invalid integer: " ++ s)
+  end;
+```
+</Accordion>
+
+## Conversion Reference
+
+<CodeGroup>
+```ivy Int → Float
+import Convert;
+Convert.floatFromInt(42)  -- 42.0
+```
+
+```ivy Float → Int
+import Convert;
+Convert.floatToInt(3.14)  -- 3
+```
+
+```ivy Int → String
+import Convert;
+Convert.intToString(42)  -- "42"
+```
+
+```ivy Float → String
+import Convert;
+Convert.floatToString(3.14)  -- "3.14"
+```
+
+```ivy String → Int (safe)
+import Convert;
+Convert.tryStringToInt("42")  -- Some(42)
+```
+
+```ivy String → Float (safe)
+import Convert;
+Convert.tryStringToFloat("3.14")  -- Some(3.14)
+```
+
+```ivy Bool → String
+import Convert;
+Convert.boolToString(true)  -- "true"
+```
+
+```ivy Bool → Int
+import Convert;
+Convert.boolToInt(true)  -- 1
+```
+
+```ivy Int → Bool
+import Convert;
+Convert.intToBool(0)  -- false
+```
+</CodeGroup>
+
+## Low-Level Intrinsics
+
+The Convert module wraps these Rust intrinsics:
+
+- `__floatFromInt(n: Int): Float`
+- `__floatToInt(f: Float): Int`
+- `__intToString(n: Int): String`
+- `__floatToString(f: Float): String`
+- `__stringToInt(s: String): Int` (unsafe)
+- `__stringToFloat(s: String): Float` (unsafe)
+- `__tryStringToInt(s: String): Option<Int>` (safe)
+- `__tryStringToFloat(s: String): Option<Float>` (safe)
+
+## Error Handling
+
+### Unsafe Functions
+These functions throw runtime errors:
+- `stringToInt()` - ValueError if string is not a valid integer
+- `stringToFloat()` - ValueError if string is not a valid float
+
+**Example error:**
+```
+ValueError: cannot parse 'hello' as Int
+```
+
+### Safe Functions
+These functions return `Option` types:
+- `tryStringToInt()` - Returns `None` on failure
+- `tryStringToFloat()` - Returns `None` on failure
+
+<Tip>
+  **Always prefer safe functions** (`try*` variants) when parsing user input or external data.
+</Tip>
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="Prelude" href="/stdlib/prelude">
+    Option and Result types for safe conversion
+  </Card>
+  <Card title="String Module" href="/stdlib/string">
+    String manipulation functions
+  </Card>
+  <Card title="Math Module" href="/stdlib/math">
+    Rounding functions (floor, ceil, round)
+  </Card>
+</CardGroup>

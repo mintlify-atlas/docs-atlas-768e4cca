@@ -1,80 +1,455 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick start
+description: Write your first Ivy program and learn the basics of the language
 ---
 
-## Get started in three steps
+Get started with Ivy in minutes! This guide will walk you through the basics of the language using the interactive REPL and writing your first programs.
 
-Get your documentation site running locally and make your first customization.
+## Using the REPL
 
-### Step 1: Set up your local environment
+The Ivy REPL (Read-Eval-Print Loop) is the fastest way to experiment with the language.
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+<Steps>
+  <Step title="Start the REPL">
+    Launch the interactive environment by running:
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    ```bash
+    ivy
+    ```
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+    You'll see the Ivy prompt:
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    ```
+    ivy>
+    ```
+  </Step>
+  
+  <Step title="Try basic expressions">
+    Ivy supports arithmetic, strings, and function calls:
+    
+    ```ivy
+    ivy> 2 + 2
+    4
+    
+    ivy> "Hello, " ++ "world!"
+    "Hello, world!"
+    
+    ivy> length([1, 2, 3, 4, 5])
+    5
+    ```
+  </Step>
+  
+  <Step title="Define variables">
+    Use `let` to bind values to names:
+    
+    ```ivy
+    ivy> let x = 42;
+    
+    ivy> x * 2
+    84
+    
+    ivy> let name = "Ivy";
+    
+    ivy> "Hello, " ++ name
+    "Hello, Ivy"
+    ```
+  </Step>
+  
+  <Step title="Explore REPL commands">
+    The REPL provides helpful commands:
+    
+    ```ivy
+    ivy> :help
+    Ivy REPL Commands:
+    
+      :help, :h          Show this help message
+      :quit, :q          Exit the REPL
+      :reset, :r         Reset interpreter state (clear all definitions)
+      :type <expr>, :t   Show the inferred type of an expression
+      :env               Show all defined names in current scope
+    ```
+  </Step>
+</Steps>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+<Note>
+  Multi-line input is supported! The REPL will show `...>` when it detects unclosed brackets or incomplete expressions.
+</Note>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+## Type inference in action
 
-### Step 3: Go live
+Ivy uses Hindley-Milner type inference - you don't need to write type annotations, but you can!
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+### Checking types
+
+Use the `:type` (or `:t`) command to see inferred types:
+
+```ivy
+ivy> :type 42
+42 :: Int
+
+ivy> :type "hello"
+"hello" :: String
+
+ivy> :type [1, 2, 3]
+[1, 2, 3] :: [Int]
+
+ivy> :type fn (x) => x + 1
+fn (x) => x + 1 :: Int -> Int
+```
+
+### Type annotations
+
+You can add type annotations for clarity or to constrain types:
+
+```ivy
+ivy> let add(x: Int, y: Int): Int => x + y;
+
+ivy> add(5, 3)
+8
+
+ivy> :type add
+add :: Int -> Int -> Int
+```
+
+## Writing functions
+
+Functions are first-class values in Ivy.
+
+### Anonymous functions
+
+```ivy
+ivy> let double = fn (x) => x * 2;
+
+ivy> double(21)
+42
+
+ivy> let greet = fn (name) => "Hello, " ++ name ++ "!";
+
+ivy> greet("Ivy")
+"Hello, Ivy!"
+```
+
+### Named functions
+
+```ivy
+ivy> fn factorial(0): Int => 1;
+ivy> fn factorial(n: Int): Int => n * factorial(n - 1);
+
+ivy> factorial(5)
+120
+```
+
+### Higher-order functions
+
+Functions can take other functions as arguments:
+
+```ivy
+ivy> let numbers = [1, 2, 3, 4, 5];
+
+ivy> map(fn (x) => x * 2, numbers)
+[2, 4, 6, 8, 10]
+
+ivy> filter(fn (x) => x > 2, numbers)
+[3, 4, 5]
+
+ivy> foldl(fn (acc, x) => acc + x, 0, numbers)
+15
+```
+
+## Working with data types
+
+### Lists
+
+Lists are homogeneous collections:
+
+```ivy
+ivy> let fruits = ["apple", "banana", "cherry"];
+
+ivy> head(fruits)
+Some("apple")
+
+ivy> tail(fruits)
+Some(["banana", "cherry"])
+
+ivy> [0 | fruits]  -- Cons operator
+[0, "apple", "banana", "cherry"]  -- Error: type mismatch!
+
+ivy> ["orange" | fruits]  -- Correct type
+["orange", "apple", "banana", "cherry"]
+```
+
+### Option type
+
+The `Option` type represents values that may not exist (no null!):
+
+```ivy
+ivy> let safeDivide = fn (x, y) => 
+...>   if y == 0 then None else Some(x / y);
+
+ivy> safeDivide(10, 2)
+Some(5)
+
+ivy> safeDivide(10, 0)
+None
+
+ivy> unwrapOr(safeDivide(10, 0), -1)
+-1
+```
+
+### Result type
+
+The `Result` type represents computations that may fail:
+
+```ivy
+ivy> let parsePositive = fn (n) =>
+...>   if n > 0 then Ok(n) else Err("Must be positive");
+
+ivy> parsePositive(5)
+Ok(5)
+
+ivy> parsePositive(-3)
+Err("Must be positive")
+```
+
+### Custom types
+
+Define your own algebraic data types:
+
+```ivy
+ivy> type Color = Red | Green | Blue;
+
+ivy> let favoriteColor = Red;
+
+ivy> match favoriteColor with
+...> | Red -> "Roses"
+...> | Green -> "Grass"
+...> | Blue -> "Sky"
+...> end
+"Roses"
+```
+
+## Pattern matching
+
+Pattern matching is powerful and exhaustive:
+
+```ivy
+ivy> fn describe([]): String => "empty list";
+ivy> fn describe([x]): String => "one element: " ++ show(x);
+ivy> fn describe([x, y]): String => "two elements";
+ivy> fn describe(_): String => "many elements";
+
+ivy> describe([])
+"empty list"
+
+ivy> describe([1])
+"one element: 1"
+
+ivy> describe([1, 2, 3])
+"many elements"
+```
+
+## Your first Ivy program
+
+Create a file called `hello.ivy`:
+
+<CodeGroup>
+```ivy hello.ivy
+-- Hello World in Ivy
+fn main() => do {
+  println("Hello, Ivy!");
+  println("Welcome to functional programming.");
+  
+  let numbers = [1, 2, 3, 4, 5];
+  let doubled = map(fn (x) => x * 2, numbers);
+  
+  println("Original: " ++ show(numbers));
+  println("Doubled: " ++ show(doubled));
+};
+
+main();
+```
+
+```ivy fibonacci.ivy
+-- Fibonacci sequence
+fn fib(0): Int => 0;
+fn fib(1): Int => 1;
+fn fib(n: Int): Int => fib(n - 1) + fib(n - 2);
+
+fn main() => do {
+  let n = 10;
+  println("Fibonacci numbers up to " ++ show(n) ++ ":");
+  
+  let numbers = range(0, n);
+  let fibs = map(fib, numbers);
+  
+  println(show(fibs));
+};
+
+main();
+```
+
+```ivy list_operations.ivy
+-- Working with lists
+import List;
+
+fn main() => do {
+  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  
+  -- Filter even numbers
+  let evens = filter(fn (x) => x % 2 == 0, numbers);
+  println("Evens: " ++ show(evens));
+  
+  -- Sum all numbers
+  let total = foldl(fn (acc, x) => acc + x, 0, numbers);
+  println("Sum: " ++ show(total));
+  
+  -- Find maximum
+  let max = List.maximum(numbers);
+  match max with
+  | Some(m) -> println("Max: " ++ show(m))
+  | None -> println("Empty list")
+  end;
+};
+
+main();
+```
+</CodeGroup>
+
+### Running your program
+
+<Steps>
+  <Step title="Run the program">
+    Execute your Ivy file:
+    
+    ```bash
+    ivy hello.ivy
+    ```
+    
+    Output:
+    ```
+    Hello, Ivy!
+    Welcome to functional programming.
+    Original: [1, 2, 3, 4, 5]
+    Doubled: [2, 4, 6, 8, 10]
+    ```
+  </Step>
+  
+  <Step title="Type check without running">
+    Verify your program type-checks:
+    
+    ```bash
+    ivy --check hello.ivy
+    ```
+    
+    On success:
+    ```
+    OK: hello.ivy type checks successfully
+    ```
+  </Step>
+  
+  <Step title="View the syntax tree">
+    Inspect the parsed AST:
+    
+    ```bash
+    ivy --tree hello.ivy
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  All Ivy programs must type-check before they can run. If there's a type error, the program won't execute.
+</Warning>
+
+## Module system
+
+Ivy supports a module system for organizing code.
+
+### Importing modules
+
+```ivy
+import List;  -- Import the List module
+import String;  -- Import the String module
+
+fn main() => do {
+  let nums = [1, 2, 2, 3, 3, 3, 4];
+  let unique = List.dedup(nums, fn (a, b) => a == b);
+  println(show(unique));
+};
+```
+
+### Available standard modules
+
+Ivy includes several standard library modules:
+
+- **Prelude** - Automatically loaded, provides core types and functions
+- **List** - Extended list operations (see `lib/list.ivy`)
+- **String** - String manipulation functions
+- **Math** - Mathematical functions
+- **Random** - Random number generation
+- **File** - File I/O operations
+- **Convert** - Type conversion utilities
+
+<Note>
+  Module files are resolved from the current directory and `lib/` subdirectories.
+</Note>
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
+Now that you've learned the basics:
 
-<CardGroup cols={2}>
+- Explore the standard library modules in the `lib/` directory
+- Learn about advanced type features and traits
+- Build more complex applications with the module system
+- Contribute to the Ivy project!
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+## Common patterns
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+### Pipeline operations
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+Chain function calls for readable data transformations:
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+```ivy
+ivy> let result = [1, 2, 3, 4, 5]
+...>   |> map(fn (x) => x * 2)
+...>   |> filter(fn (x) => x > 5)
+...>   |> foldl(fn (acc, x) => acc + x, 0);
 
-</CardGroup>
+ivy> result
+18
+```
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+### Do notation
+
+Use `do` blocks for sequential computations:
+
+```ivy
+ivy> fn calculate() => do {
+...>   let x = 10;
+...>   let y = 20;
+...>   let sum = x + y;
+...>   println("Sum: " ++ show(sum));
+...>   sum
+...> };
+
+ivy> calculate()
+Sum: 30
+30
+```
+
+### Error handling
+
+Combine `Result` types for robust error handling:
+
+```ivy
+ivy> fn divide(x: Int, y: Int): Result<Int, String> =>
+...>   if y == 0 then Err("Division by zero")
+...>   else Ok(x / y);
+
+ivy> match divide(10, 2) with
+...> | Ok(result) -> println("Result: " ++ show(result))
+...> | Err(msg) -> println("Error: " ++ msg)
+...> end
+Result: 5
+```
+
+Happy coding with Ivy! 🌿

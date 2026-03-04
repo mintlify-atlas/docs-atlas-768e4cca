@@ -1,0 +1,277 @@
+---
+title: Multi-line Input
+description: Writing complex expressions across multiple lines in the REPL
+icon: code
+---
+
+The Ivy REPL supports multi-line input, allowing you to write complex expressions, functions, and data structures across multiple lines for better readability.
+
+## How It Works
+
+The REPL automatically detects when your input is incomplete and switches to continuation mode. When this happens:
+
+1. The prompt changes from `ivy>` to `...>`
+2. You can continue typing on the next line
+3. The REPL collects all lines until the expression is complete
+4. The complete expression is then parsed and evaluated
+
+## Triggers for Multi-line Mode
+
+The REPL enters multi-line mode when it detects:
+
+- **Unclosed parentheses** `(`
+- **Unclosed brackets** `[`
+- **Unclosed braces** `{`
+- **Unterminated strings** `"`
+- **Incomplete expressions** (detected by the parser)
+
+<Note>
+  The REPL tracks delimiter depth to determine when your expression is complete. You don't need to use any special syntax or escape sequences.
+</Note>
+
+## Examples
+
+### Multi-line Function Definitions
+
+Define functions with better formatting:
+
+```ivy
+ivy> let factorial = fn(n) =>
+...>   if n <= 1 then
+...>     1
+...>   else
+...>     n * factorial(n - 1)
+
+ivy> factorial(5)
+120
+```
+
+### Multi-line Lists
+
+Create lists with one element per line:
+
+```ivy
+ivy> let numbers = [
+...>   1,
+...>   2,
+...>   3,
+...>   4,
+...>   5
+...> ]
+
+ivy> numbers
+[1, 2, 3, 4, 5]
+```
+
+### Multi-line Records
+
+Define records with clear field separation:
+
+```ivy
+ivy> let person = {
+...>   name: "Alice",
+...>   age: 30,
+...>   email: "alice@example.com"
+...> }
+
+ivy> person.name
+"Alice"
+```
+
+### Nested Structures
+
+The REPL handles arbitrary nesting:
+
+```ivy
+ivy> let data = {
+...>   users: [
+...>     {name: "Alice", scores: [95, 87, 92]},
+...>     {name: "Bob", scores: [88, 91, 85]}
+...>   ],
+...>   total: 2
+...> }
+
+ivy> data.users[0].scores
+[95, 87, 92]
+```
+
+### Pattern Matching
+
+Write clear pattern matching expressions:
+
+```ivy
+ivy> let describe = fn(list) => match list {
+...>   [] => "empty",
+...>   [x] => "single element",
+...>   [x, y] => "two elements",
+...>   _ => "many elements"
+...> }
+
+ivy> describe([1, 2, 3])
+"many elements"
+```
+
+### Long Expressions
+
+Break up complex calculations:
+
+```ivy
+ivy> let result = (
+...>   (10 + 20) *
+...>   (30 - 5) /
+...>   (2 + 3)
+...> )
+
+ivy> result
+150
+```
+
+## Handling Incomplete Input
+
+### Canceling Multi-line Input
+
+If you start a multi-line expression and want to cancel it:
+
+- Press `Ctrl+C` to interrupt and return to the main prompt
+
+```ivy
+ivy> let x = {
+...>   name: "test",
+...> ^C
+ivy>
+```
+
+### Completing Expressions
+
+To complete a multi-line expression, ensure all delimiters are closed:
+
+```ivy
+ivy> let sum = (
+...>   1 + 2 + 3
+...> )
+# Expression completes when parenthesis is closed
+
+ivy> sum
+6
+```
+
+## Empty Lines in Multi-line Mode
+
+Empty lines within multi-line input are preserved:
+
+```ivy
+ivy> let example = fn(x) => {
+...>
+...>   let doubled = x * 2,
+...>
+...>   doubled + 10
+...> }
+```
+
+<Note>
+  Empty lines can improve readability but are not required. The REPL will continue prompting until the expression is syntactically complete.
+</Note>
+
+## Common Patterns
+
+### Let Bindings with Multiple Values
+
+```ivy
+ivy> let {
+...>   x = 10,
+...>   y = 20,
+...>   z = x + y
+...> }
+
+ivy> z
+30
+```
+
+### Higher-order Functions
+
+```ivy
+ivy> let map = fn(f, list) => match list {
+...>   [] => [],
+...>   [head, ...tail] => [
+...>     f(head),
+...>     ...map(f, tail)
+...>   ]
+...> }
+
+ivy> map(fn(x) => x * 2, [1, 2, 3])
+[2, 4, 6]
+```
+
+### Type Definitions
+
+```ivy
+ivy> type Option<a> =
+...>   | Some(a)
+...>   | None
+
+ivy> let x = Some(42)
+
+ivy> match x {
+...>   Some(value) => value,
+...>   None => 0
+...> }
+42
+```
+
+## Tips for Multi-line Input
+
+<Accordion title="Use consistent indentation">
+  While Ivy doesn't require specific indentation, consistent formatting makes your REPL code more readable:
+
+  ```ivy
+  ivy> let process = fn(data) =>
+  ...>   let filtered = filter(data),
+  ...>   let mapped = map(filtered),
+  ...>   let result = reduce(mapped),
+  ...>   result
+  ```
+</Accordion>
+
+<Accordion title="Start simple, then expand">
+  When working with complex expressions, start with a simple version and expand:
+
+  ```ivy
+  # Start simple
+  ivy> let avg = fn(list) => sum(list) / length(list)
+
+  # Then expand with error handling
+  ivy> let safeAvg = fn(list) => match list {
+  ...>   [] => 0,
+  ...>   _ => sum(list) / length(list)
+  ...> }
+  ```
+</Accordion>
+
+<Accordion title="Use :type to check as you go">
+  For complex multi-line functions, check types of sub-expressions:
+
+  ```ivy
+  ivy> let complex = fn(x, y) => {
+  ...>   let step1 = x * 2,
+  ...>   let step2 = y + step1,
+  ...>   step2
+  ...> }
+
+  ivy> :type complex
+  complex :: Int -> Int -> Int
+  ```
+</Accordion>
+
+## Parser-Driven Continuation
+
+The REPL uses Ivy's parser to detect incomplete input. When the parser encounters:
+
+- `UnexpectedEof` - Expected more tokens
+- `Unterminated` - Unclosed delimiter
+- Unbalanced delimiters based on bracket counting
+
+The REPL will automatically enter continuation mode.
+
+<Note>
+  This intelligent detection means you don't need to memorize rules - just write naturally, and the REPL will prompt for continuation when needed.
+</Note>

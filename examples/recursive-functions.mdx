@@ -1,0 +1,602 @@
+---
+title: "Recursive Functions"
+description: "Master recursion patterns for elegant and powerful functional programming"
+icon: "rotate"
+---
+
+## Overview
+
+Recursion is fundamental to functional programming in Ivy. Instead of loops, you use functions that call themselves. This guide explores various recursion patterns, from simple to advanced, with real examples from Ivy's standard library.
+
+## What is Recursion?
+
+A recursive function is one that calls itself. Every recursive function needs:
+
+1. **Base case(s)** - conditions where recursion stops
+2. **Recursive case(s)** - calls to the function with modified arguments
+3. **Progress** - each recursive call moves toward a base case
+
+## Simple Recursion
+
+### Counting down
+
+```ivy
+fn countdown(0) => println("Done!");
+fn countdown(n) => do {
+  println(n);
+  countdown(n - 1)
+};
+
+countdown(5);
+```
+
+**Output:**
+```
+5
+4
+3
+2
+1
+Done!
+```
+
+<Steps>
+  <Step title="Base case">
+    When `n` is `0`, print "Done!" and stop.
+  </Step>
+  
+  <Step title="Recursive case">
+    Print the current number and call `countdown(n - 1)`.
+  </Step>
+  
+  <Step title="Progress">
+    Each call decreases `n` by 1, eventually reaching 0.
+  </Step>
+</Steps>
+
+## List Recursion
+
+Lists are naturally recursive structures, perfect for recursive functions.
+
+### Length of a list
+
+```ivy
+fn length([]) => 0;
+fn length([_ | xs]) => 1 + length(xs);
+
+println(length([]));
+println(length([1, 2, 3, 4, 5]));
+```
+
+**Output:**
+```
+0
+5
+```
+
+### Sum of a list
+
+```ivy
+fn sum([]) => 0;
+fn sum([x | xs]) => x + sum(xs);
+
+println(sum([1, 2, 3, 4, 5]));
+```
+
+**Output:**
+```
+15
+```
+
+### Product of a list
+
+```ivy
+fn product([]) => 1;
+fn product([x | xs]) => x * product(xs);
+
+println(product([1, 2, 3, 4, 5]));
+```
+
+**Output:**
+```
+120
+```
+
+<Note>
+  Notice the pattern: empty list returns the identity value (0 for sum, 1 for product), and the recursive case combines the head with the result from the tail.
+</Note>
+
+## Structural Recursion
+
+Recurse on the structure of data:
+
+### Maximum element
+
+```ivy
+fn maximum([x]) => x;
+fn maximum([x | xs]) => do {
+  let maxRest = maximum(xs);
+  if x > maxRest then x else maxRest
+};
+
+println(maximum([3, 1, 4, 1, 5, 9, 2]));
+```
+
+**Output:**
+```
+9
+```
+
+### Reverse a list
+
+```ivy
+fn concat([], ys) => ys;
+fn concat([x | xs], ys) => [x | concat(xs, ys)];
+
+fn reverse([]) => [];
+fn reverse([x | xs]) => concat(reverse(xs), [x]);
+
+println(reverse([1, 2, 3, 4, 5]));
+```
+
+**Output:**
+```
+[5, 4, 3, 2, 1]
+```
+
+<Accordion title="Why is this reverse inefficient?">
+  This reverse is O(n²) because `concat` traverses the entire first list for each element. We append to the end repeatedly, which is expensive.
+  
+  A better approach uses an accumulator (see tail recursion below).
+</Accordion>
+
+## Tail Recursion
+
+Tail-recursive functions make the recursive call as their last operation, enabling optimization.
+
+### Tail-recursive sum
+
+```ivy
+fn sumHelper([], acc) => acc;
+fn sumHelper([x | xs], acc) => sumHelper(xs, acc + x);
+
+fn sum(xs) => sumHelper(xs, 0);
+
+println(sum([1, 2, 3, 4, 5]));
+```
+
+**Output:**
+```
+15
+```
+
+### Tail-recursive reverse
+
+```ivy
+fn reverseHelper([], acc) => acc;
+fn reverseHelper([x | xs], acc) => reverseHelper(xs, [x | acc]);
+
+fn reverse(xs) => reverseHelper(xs, []);
+
+println(reverse([1, 2, 3, 4, 5]));
+```
+
+**Output:**
+```
+[5, 4, 3, 2, 1]
+```
+
+<Note>
+  Tail recursion is faster and uses less stack space. The accumulator (`acc`) carries the result forward, so no work happens after the recursive call returns.
+</Note>
+
+### Tail-recursive factorial
+
+```ivy
+fn factHelper(0, acc) => acc;
+fn factHelper(n, acc) => factHelper(n - 1, n * acc);
+
+fn factorial(n) => factHelper(n, 1);
+
+println(factorial(5));
+println(factorial(10));
+```
+
+**Output:**
+```
+120
+3628800
+```
+
+## Multiple Recursion
+
+Functions that make multiple recursive calls:
+
+### Fibonacci (inefficient)
+
+```ivy
+fn fib(0) => 0;
+fn fib(1) => 1;
+fn fib(n) => fib(n - 1) + fib(n - 2);
+
+println(fib(10));
+```
+
+**Output:**
+```
+55
+```
+
+### Tree recursion
+
+```ivy
+type Tree<a> =
+| Leaf
+| Node(a, Tree<a>, Tree<a>);
+
+fn size(Leaf) => 0;
+fn size(Node(_, left, right)) => 1 + size(left) + size(right);
+
+fn depth(Leaf) => 0;
+fn depth(Node(_, left, right)) => do {
+  let leftDepth = depth(left);
+  let rightDepth = depth(right);
+  let maxDepth = if leftDepth > rightDepth then leftDepth else rightDepth;
+  1 + maxDepth
+};
+
+let tree = Node(1,
+  Node(2, Leaf, Leaf),
+  Node(3, Node(4, Leaf, Leaf), Leaf)
+);
+
+println(size(tree));
+println(depth(tree));
+```
+
+**Output:**
+```
+4
+3
+```
+
+## Mutual Recursion
+
+Functions that call each other:
+
+### Even and odd
+
+```ivy
+fn isEven(0) => true;
+fn isEven(n) => isOdd(n - 1);
+
+fn isOdd(0) => false;
+fn isOdd(n) => isEven(n - 1);
+
+println(isEven(4));
+println(isOdd(4));
+println(isEven(7));
+println(isOdd(7));
+```
+
+**Output:**
+```
+true
+false
+false
+true
+```
+
+<Accordion title="When is mutual recursion useful?">
+  Mutual recursion is useful when:
+  - Modeling state machines with alternating states
+  - Parsing languages with mutually recursive grammar rules
+  - Processing data structures with alternating patterns
+  
+  In this example, we're using it for demonstration, but `n % 2 == 0` would be more efficient!
+</Accordion>
+
+## The Accumulator Pattern
+
+Use an accumulator to build up results:
+
+### Range generation
+
+```ivy
+fn rangeHelper(current, stop, acc) =>
+  if current > stop
+  then reverse(acc)
+  else rangeHelper(current + 1, stop, [current | acc]);
+
+fn reverse([]) => [];
+fn reverse([x | xs]) => reverse(xs) ++ [x];
+
+fn range(start, stop) => rangeHelper(start, stop, []);
+
+println(range(1, 10));
+```
+
+**Output:**
+```
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+```
+
+### Filter with accumulator
+
+```ivy
+fn filterHelper(pred, [], acc) => reverse(acc);
+fn filterHelper(pred, [x | xs], acc) =>
+  if pred(x)
+  then filterHelper(pred, xs, [x | acc])
+  else filterHelper(pred, xs, acc);
+
+fn reverse(xs) => reverseHelper(xs, []);
+fn reverseHelper([], acc) => acc;
+fn reverseHelper([x | xs], acc) => reverseHelper(xs, [x | acc]);
+
+fn filter(pred, xs) => filterHelper(pred, xs, []);
+
+fn isEven(n) => n % 2 == 0;
+
+println(filter(isEven, [1, 2, 3, 4, 5, 6, 7, 8]));
+```
+
+**Output:**
+```
+[2, 4, 6, 8]
+```
+
+## Higher-Order Recursive Functions
+
+### Map
+
+```ivy
+fn map(f, []) => [];
+fn map(f, [x | xs]) => [f(x) | map(f, xs)];
+
+fn double(x) => x * 2;
+fn square(x) => x * x;
+
+println(map(double, [1, 2, 3, 4]));
+println(map(square, [1, 2, 3, 4]));
+```
+
+**Output:**
+```
+[2, 4, 6, 8]
+[1, 4, 9, 16]
+```
+
+### Fold (reduce)
+
+```ivy
+fn foldl(f, acc, []) => acc;
+fn foldl(f, acc, [x | xs]) => foldl(f, f(acc, x), xs);
+
+fn foldr(f, acc, []) => acc;
+fn foldr(f, acc, [x | xs]) => f(x, foldr(f, acc, xs));
+
+fn add(x, y) => x + y;
+fn mult(x, y) => x * y;
+
+println(foldl(add, 0, [1, 2, 3, 4]));
+println(foldr(mult, 1, [1, 2, 3, 4]));
+```
+
+**Output:**
+```
+10
+24
+```
+
+<Note>
+  `foldl` processes left-to-right: `((0 + 1) + 2) + 3) + 4`
+  
+  `foldr` processes right-to-left: `1 * (2 * (3 * (4 * 1)))`
+</Note>
+
+## Recursion with Multiple Lists
+
+### Zip two lists
+
+```ivy
+fn zip([], _) => [];
+fn zip(_, []) => [];
+fn zip([x | xs], [y | ys]) => [(x, y) | zip(xs, ys)];
+
+println(zip([1, 2, 3], ["a", "b", "c"]));
+println(zip([1, 2], ["a", "b", "c", "d"]));
+```
+
+**Output:**
+```
+[(1, a), (2, b), (3, c)]
+[(1, a), (2, b)]
+```
+
+### ZipWith
+
+```ivy
+fn zipWith(f, [], _) => [];
+fn zipWith(f, _, []) => [];
+fn zipWith(f, [x | xs], [y | ys]) => [f(x, y) | zipWith(f, xs, ys)];
+
+fn add(x, y) => x + y;
+fn mult(x, y) => x * y;
+
+println(zipWith(add, [1, 2, 3], [4, 5, 6]));
+println(zipWith(mult, [1, 2, 3], [4, 5, 6]));
+```
+
+**Output:**
+```
+[5, 7, 9]
+[4, 10, 18]
+```
+
+## Practical Examples from Ivy's Standard Library
+
+### Take n elements
+
+```ivy
+fn take(0, _) => [];
+fn take(_, []) => [];
+fn take(n, [x | xs]) => [x | take(n - 1, xs)];
+
+println(take(3, [1, 2, 3, 4, 5]));
+println(take(10, [1, 2, 3]));
+```
+
+**Output:**
+```
+[1, 2, 3]
+[1, 2, 3]
+```
+
+### Drop n elements
+
+```ivy
+fn drop(0, xs) => xs;
+fn drop(_, []) => [];
+fn drop(n, [_ | xs]) => drop(n - 1, xs);
+
+println(drop(2, [1, 2, 3, 4, 5]));
+```
+
+**Output:**
+```
+[3, 4, 5]
+```
+
+### Flatten nested lists
+
+```ivy
+fn concat([], ys) => ys;
+fn concat([x | xs], ys) => [x | concat(xs, ys)];
+
+fn flatten([]) => [];
+fn flatten([xs | xss]) => concat(xs, flatten(xss));
+
+println(flatten([[1, 2], [3, 4], [5]]));
+```
+
+**Output:**
+```
+[1, 2, 3, 4, 5]
+```
+
+## Recursion on Custom Types
+
+### List length using Option
+
+```ivy
+fn head([]) => None;
+fn head([x | _]) => Some(x);
+
+fn tail([]) => None;
+fn tail([_ | xs]) => Some(xs);
+
+fn lengthHelper(None) => 0;
+fn lengthHelper(Some(xs)) => 1 + lengthHelper(tail(xs));
+
+fn length(xs) => lengthHelper(Some(xs));
+
+println(length([1, 2, 3, 4]));
+```
+
+**Output:**
+```
+4
+```
+
+### GCD (Greatest Common Divisor)
+
+```ivy
+fn abs(x) => if x < 0 then -x else x;
+
+fn gcd(a, 0) => abs(a);
+fn gcd(a, b) => gcd(b, a % b);
+
+println(gcd(48, 18));
+println(gcd(100, 35));
+```
+
+**Output:**
+```
+6
+5
+```
+
+## Recursion Best Practices
+
+<Steps>
+  <Step title="Always define base cases first">
+    Put your base case patterns before recursive patterns for clarity.
+  </Step>
+  
+  <Step title="Ensure progress toward base case">
+    Each recursive call should move closer to the terminating condition.
+  </Step>
+  
+  <Step title="Use tail recursion for efficiency">
+    When possible, make the recursive call the last operation.
+  </Step>
+  
+  <Step title="Use accumulators to build results">
+    Pass forward intermediate results to avoid redundant work.
+  </Step>
+  
+  <Step title="Consider memoization for expensive recursion">
+    Cache results of previous computations to avoid recalculation.
+  </Step>
+</Steps>
+
+## Common Recursion Patterns
+
+| Pattern | Example | Use Case |
+|---------|---------|----------|
+| Simple recursion | `length`, `sum` | Single recursive call |
+| Tail recursion | `reverseHelper` | Optimizable, constant stack |
+| Multiple recursion | `fib`, `tree operations` | Branching recursion |
+| Mutual recursion | `isEven`, `isOdd` | Alternating states |
+| Accumulator | `filterHelper` | Building results |
+| Structural recursion | All list operations | Following data structure |
+
+## Performance Considerations
+
+- **Stack depth**: Deep recursion can cause stack overflow
+- **Tail call optimization**: Tail-recursive functions use constant stack space
+- **Time complexity**: Multiple recursion (like naive Fibonacci) can be exponential
+- **Memoization**: Cache results to avoid recalculation
+- **Iterative alternatives**: Sometimes iteration is more natural
+
+<Accordion title="When to avoid recursion">
+  While recursion is elegant, avoid it when:
+  - The recursion depth could be very large (risk of stack overflow)
+  - An iterative solution would be much simpler
+  - Performance is critical and the recursion isn't tail-recursive
+  
+  However, Ivy's functional nature makes recursion the natural choice for most problems!
+</Accordion>
+
+## Key Takeaways
+
+- **Recursion replaces loops** in functional programming
+- **Base cases** prevent infinite recursion
+- **Pattern matching** makes recursive definitions clear
+- **Tail recursion** enables optimization
+- **Accumulators** carry forward intermediate results
+- **Higher-order recursion** enables powerful abstractions
+- **Structural recursion** follows data structure shape
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Pattern Matching" icon="shapes" href="/examples/pattern-matching">
+    Master the patterns that enable elegant recursion
+  </Card>
+  
+  <Card title="List Module" icon="list" href="/stdlib/list">
+    Explore recursive list functions in the standard library
+  </Card>
+</CardGroup>

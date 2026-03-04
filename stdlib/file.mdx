@@ -1,0 +1,299 @@
+---
+title: 'File Module'
+description: 'File I/O operations for reading and writing files'
+---
+
+The File module provides functions for reading and writing files. All file operations may fail at runtime if the file doesn't exist or permissions are insufficient.
+
+```ivy
+import File;
+```
+
+<Warning>
+  File operations have side effects and may throw runtime errors. Always ensure files exist before reading, and have proper permissions for writing.
+</Warning>
+
+## Reading Files
+
+### readFile
+```ivy
+pub fn readFile(path: String): String
+```
+Reads the entire contents of a file as a string.
+
+**Example:**
+```ivy
+import File;
+
+let content = File.readFile("example.txt");
+println(content);
+```
+
+<Note>
+  Throws a runtime error if the file doesn't exist or cannot be read.
+</Note>
+
+### readLines
+```ivy
+pub fn readLines(path: String): [String]
+```
+Reads a file and splits it into lines (split by newline character).
+
+**Example:**
+```ivy
+import File;
+import List;
+
+let lines = File.readLines("data.txt");
+let lineCount = length(lines);
+println("File has " ++ show(lineCount) ++ " lines");
+```
+
+## Writing Files
+
+### writeFile
+```ivy
+pub fn writeFile(path: String, content: String): ()
+```
+Writes a string to a file, **overwriting** if it already exists.
+
+**Example:**
+```ivy
+import File;
+
+let message = "Hello, Ivy!";
+File.writeFile("output.txt", message);
+```
+
+<Warning>
+  This function **overwrites** existing files without warning. Use `appendFile` to add to existing content.
+</Warning>
+
+### writeLines
+```ivy
+pub fn writeLines(path: String, lines: [String]): ()
+```
+Writes a list of strings to a file, with each string on a new line.
+
+**Example:**
+```ivy
+import File;
+
+let lines = ["Line 1", "Line 2", "Line 3"];
+File.writeLines("output.txt", lines);
+```
+
+## Appending to Files
+
+### appendFile
+```ivy
+pub fn appendFile(path: String, content: String): ()
+```
+Appends a string to the end of a file. Creates the file if it doesn't exist.
+
+**Example:**
+```ivy
+import File;
+
+File.appendFile("log.txt", "New log entry\n");
+File.appendFile("log.txt", "Another entry\n");
+```
+
+### appendLine
+```ivy
+pub fn appendLine(path: String, line: String): ()
+```
+Appends a line to a file (automatically adds a newline character).
+
+**Example:**
+```ivy
+import File;
+
+File.appendLine("log.txt", "Log entry 1");
+File.appendLine("log.txt", "Log entry 2");
+```
+
+## File Checks
+
+### exists
+```ivy
+pub fn exists(path: String): Bool
+```
+Checks if a file exists at the given path.
+
+**Example:**
+```ivy
+import File;
+
+if File.exists("config.txt") then
+  println("Config file found")
+else
+  println("Config file missing");
+```
+
+## Common Patterns
+
+<Accordion title="Safe file reading with existence check">
+```ivy
+import File;
+
+fn safeReadFile(path: String): Option<String> =>
+  if File.exists(path)
+  then Some(File.readFile(path))
+  else None;
+
+match safeReadFile("data.txt") with
+| Some(content) -> println(content)
+| None -> println("File not found")
+end;
+```
+</Accordion>
+
+<Accordion title="Processing a file line by line">
+```ivy
+import File;
+import List;
+import String;
+
+let lines = File.readLines("data.txt");
+
+-- Filter out empty lines
+let nonEmpty = List.filter(fn (s) => String.notEmpty?(s), lines);
+
+-- Process each line
+let processed = List.map(String.trim, nonEmpty);
+
+-- Write back
+File.writeLines("output.txt", processed);
+```
+</Accordion>
+
+<Accordion title="Building a simple log file">
+```ivy
+import File;
+
+fn log(message: String): () =>
+  File.appendLine("app.log", message);
+
+log("Application started");
+log("User logged in");
+log("Task completed");
+```
+</Accordion>
+
+<Accordion title="Counting word frequency in a file">
+```ivy
+import File;
+import List;
+import String;
+
+let content = File.readFile("document.txt");
+let words = String.split(content, " ")
+  |> List.map(String.toLower)
+  |> List.map(String.trim);
+
+let wordCount = length(words);
+println("Total words: " ++ show(wordCount));
+```
+</Accordion>
+
+<Accordion title="Converting file formats">
+```ivy
+import File;
+import List;
+import String;
+
+-- Read CSV, convert to TSV
+let csvContent = File.readFile("data.csv");
+let rows = String.split(csvContent, "\n");
+
+let tsvRows = List.map(
+  fn (row) => String.replace(row, ",", "\t"),
+  rows
+);
+
+let tsvContent = String.join(tsvRows, "\n");
+File.writeFile("data.tsv", tsvContent);
+```
+</Accordion>
+
+<Accordion title="Backup a file">
+```ivy
+import File;
+
+fn backupFile(path: String): () => do {
+  let content = File.readFile(path);
+  let backupPath = path ++ ".bak";
+  File.writeFile(backupPath, content);
+  println("Backup created: " ++ backupPath)
+};
+
+if File.exists("important.txt") then
+  backupFile("important.txt")
+else
+  println("File not found");
+```
+</Accordion>
+
+## Working with Paths
+
+<Accordion title="Building file paths">
+```ivy
+import File;
+
+-- Simple path joining (Unix-style)
+fn joinPath(dir: String, filename: String): String =>
+  dir ++ "/" ++ filename;
+
+let dataDir = "data";
+let filename = "users.txt";
+let fullPath = joinPath(dataDir, filename);
+
+if File.exists(fullPath) then
+  println(File.readFile(fullPath))
+else
+  println("File not found: " ++ fullPath);
+```
+</Accordion>
+
+## Low-Level Intrinsics
+
+The File module wraps Rust intrinsics:
+
+- `__readFile(path: String): String` - Read entire file
+- `__writeFile(path: String, content: String): ()` - Write file (overwrite)
+- `__appendFile(path: String, content: String): ()` - Append to file
+- `__fileExists(path: String): Bool` - Check if file exists
+- `__strSplit(s: String, delimiter: String): [String]` - Used by readLines
+
+<Note>
+  These intrinsics are implemented in Rust for performance and access to the file system. Do not call them directly; use the public functions instead.
+</Note>
+
+## Error Handling
+
+File operations throw runtime errors in these cases:
+
+- **File not found**: Reading a non-existent file
+- **Permission denied**: Insufficient permissions to read/write
+- **I/O errors**: Disk full, network issues, etc.
+
+**Example error:**
+```
+ModuleError: Failed to read file 'missing.txt': No such file or directory
+```
+
+<Tip>
+  Always use `File.exists()` before reading files to avoid runtime errors.
+</Tip>
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="String Module" href="/stdlib/string">
+    String processing for file content
+  </Card>
+  <Card title="List Module" href="/stdlib/list">
+    List functions for processing lines
+  </Card>
+</CardGroup>

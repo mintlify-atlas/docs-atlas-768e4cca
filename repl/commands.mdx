@@ -1,0 +1,252 @@
+---
+title: REPL Commands
+description: Complete reference for all Ivy REPL commands
+icon: command
+---
+
+The Ivy REPL provides several special commands that start with a colon (`:`) to help you interact with the interpreter and explore your code.
+
+## Available Commands
+
+All commands support both a short form (single letter) and a long form for convenience.
+
+### :help - Show Help Message
+
+**Aliases:** `:help`, `:h`
+
+Displays the help message listing all available REPL commands.
+
+```ivy
+ivy> :help
+Ivy REPL Commands:
+
+  :help, :h          Show this help message
+  :quit, :q          Exit the REPL
+  :reset, :r         Reset interpreter state (clear all definitions)
+  :type <expr>, :t   Show the inferred type of an expression
+  :env               Show all defined names in current scope
+
+Multi-line input is supported. The REPL will continue prompting
+with '...>' when it detects unclosed brackets or expressions.
+```
+
+<Note>
+  The `:help` command is your quick reference when working in the REPL. It's always available to remind you of the available commands.
+</Note>
+
+### :quit - Exit the REPL
+
+**Aliases:** `:quit`, `:q`
+
+Exits the REPL session and returns to your shell.
+
+```ivy
+ivy> :quit
+```
+
+Alternatively, you can use:
+- `Ctrl+D` (sends EOF signal)
+- `Ctrl+C` (interrupts current input, press twice to exit)
+
+### :reset - Reset Interpreter State
+
+**Aliases:** `:reset`, `:r`
+
+Clears all user-defined bindings and resets the interpreter to its initial state. The type checker and type environment are also reset.
+
+```ivy
+ivy> let x = 42
+
+ivy> let y = 100
+
+ivy> :env
+Defined names:
+  x
+  y
+
+ivy> :reset
+Interpreter state reset.
+
+ivy> :env
+(no user-defined bindings)
+
+ivy> x
+Error: undefined variable 'x'
+```
+
+<Note>
+  The `:reset` command is useful when you want a clean slate without restarting the REPL. Built-in functions and types are automatically reloaded.
+</Note>
+
+### :type - Show Expression Type
+
+**Aliases:** `:type`, `:t`
+
+**Usage:** `:type <expression>`
+
+Displays the inferred type of an expression using Ivy's Hindley-Milner type inference.
+
+```ivy
+ivy> :type 42
+42 :: Int
+
+ivy> :type "hello"
+"hello" :: String
+
+ivy> :type [1, 2, 3]
+[1, 2, 3] :: [Int]
+
+ivy> let add = fn(a, b) => a + b
+
+ivy> :type add
+add :: Int -> Int -> Int
+
+ivy> :type fn(x) => x
+fn(x) => x :: a -> a
+```
+
+<Accordion title="Understanding Type Signatures">
+  - `Int` - Integer type
+  - `String` - String type
+  - `[Int]` - List of integers
+  - `Int -> Int` - Function that takes an Int and returns an Int
+  - `Int -> Int -> Int` - Function that takes two Ints and returns an Int (curried)
+  - `a -> a` - Generic function (type variable `a` can be any type)
+  - `{name: String, age: Int}` - Record type with named fields
+</Accordion>
+
+<Note>
+  The `:type` command only performs type inference; it does not evaluate the expression. This is useful for understanding types without side effects.
+</Note>
+
+### :env - Show Environment
+
+**Alias:** `:env`
+
+Lists all user-defined names currently in scope, including:
+- Local bindings (variables and functions)
+- Module exports (in the format `module.name`)
+
+```ivy
+ivy> let x = 10
+
+ivy> let square = fn(n) => n * n
+
+ivy> :env
+Defined names:
+  square
+  x
+```
+
+With module imports:
+
+```ivy
+ivy> import math
+
+ivy> :env
+Defined names:
+  math.abs
+  math.max
+  math.min
+  math.pow
+  square
+  x
+```
+
+<Note>
+  Built-in bindings that start with `__` (double underscore) are filtered out from the `:env` output to reduce clutter.
+</Note>
+
+## Command Examples
+
+### Exploring Type Inference
+
+```ivy
+ivy> let id = fn(x) => x
+
+ivy> :type id
+id :: a -> a
+
+ivy> :type id(42)
+id(42) :: Int
+
+ivy> :type id("hello")
+id("hello") :: String
+```
+
+### Debugging Workflow
+
+```ivy
+ivy> let buggyFunc = fn(x) => x + "oops"
+Error: type mismatch
+  expected Int, found String
+
+ivy> :reset
+Interpreter state reset.
+
+ivy> let fixedFunc = fn(x) => x + 1
+
+ivy> :type fixedFunc
+fixedFunc :: Int -> Int
+
+ivy> fixedFunc(41)
+42
+```
+
+### Inspecting Definitions
+
+```ivy
+ivy> let double = fn(x) => x * 2
+
+ivy> let triple = fn(x) => x * 3
+
+ivy> let quadruple = fn(x) => double(double(x))
+
+ivy> :env
+Defined names:
+  double
+  quadruple
+  triple
+
+ivy> :type quadruple
+quadruple :: Int -> Int
+```
+
+## Tips
+
+<Accordion title="Using :type for debugging">
+  When you encounter a type error, use `:type` on sub-expressions to narrow down where the type mismatch occurs:
+
+  ```ivy
+  ivy> let result = someFunc(a, b + c)
+  Error: type mismatch...
+
+  ivy> :type someFunc
+  someFunc :: Int -> String -> Bool
+
+  ivy> :type a
+  a :: Int
+
+  ivy> :type b + c
+  b + c :: String
+  ```
+
+  This reveals that `b + c` produces a String when someFunc expects a String as its second argument, which helps identify the issue.
+</Accordion>
+
+<Accordion title="Quick environment checks">
+  Use `:env` after importing modules or defining multiple functions to verify what's available:
+
+  ```ivy
+  ivy> import list
+  ivy> import math
+  ivy> :env
+  Defined names:
+    list.filter
+    list.map
+    list.reverse
+    math.abs
+    math.pow
+    ...
+  ```
+</Accordion>

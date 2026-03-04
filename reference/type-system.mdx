@@ -1,0 +1,244 @@
+---
+title: Type System
+description: Overview of Ivy's static type system with Hindley-Milner type inference
+---
+
+Ivy features a powerful static type system based on the Hindley-Milner algorithm, providing type safety without requiring explicit type annotations in most cases.
+
+## Core Principles
+
+The Ivy type system is built on several key principles:
+
+- **Static typing**: All types are checked at compile time
+- **Type inference**: Types are automatically inferred without explicit annotations
+- **Parametric polymorphism**: Generic types with type parameters (e.g., `Option<a>`, `Result<T, E>`)
+- **Algebraic data types**: Sum types (variants) and product types (tuples, records)
+- **Type safety**: Prevents type errors at compile time
+
+<Note>
+Ivy's type system is implemented in the `ivy-types` crate, which provides type checking, inference, and unification algorithms.
+</Note>
+
+## Type Representation
+
+Types in Ivy are represented internally using the `Type` enum:
+
+```rust
+pub enum Type {
+    Int,
+    Float,
+    Bool,
+    String,
+    Char,
+    Unit,
+    Var(TypeVar),
+    Fun(Box<Type>, Box<Type>),
+    Tuple(Vec<Type>),
+    List(Box<Type>),
+    Named(String, Vec<Type>),
+    Record(String, Vec<(String, Type)>),
+}
+```
+
+### Type Categories
+
+<Accordion title="Primitive Types">
+  Built-in types that form the foundation:
+  - `Int`: Integer numbers
+  - `Float`: Floating-point numbers
+  - `Bool`: Boolean values (true/false)
+  - `String`: Text strings
+  - `Char`: Single characters
+  - `()`: Unit type (similar to void)
+</Accordion>
+
+<Accordion title="Composite Types">
+  Types constructed from other types:
+  - **Function types**: `a -> b` (functions from `a` to `b`)
+  - **Tuple types**: `(a, b, c)` (fixed-size heterogeneous collections)
+  - **List types**: `[a]` (variable-size homogeneous collections)
+  - **Named types**: `Option<a>`, `Result<T, E>` (user-defined types with parameters)
+  - **Record types**: `{ name: String, age: Int }` (structural records)
+</Accordion>
+
+<Accordion title="Type Variables">
+  Placeholders for unknown types during inference:
+  - Represented as lowercase letters: `a`, `b`, `c`, etc.
+  - Used internally during type checking
+  - Resolved through unification
+</Accordion>
+
+## Type Schemes
+
+Type schemes represent polymorphic types with quantified type variables:
+
+```rust
+pub struct Scheme {
+    pub vars: Vec<TypeVar>,
+    pub ty: Type,
+}
+```
+
+For example, the identity function has the type scheme:
+
+```
+forall a. a -> a
+```
+
+This means it works for any type `a`, taking a value of type `a` and returning a value of the same type.
+
+## Type Environment
+
+The type environment (`TypeEnv`) maps variable names to their type schemes:
+
+```rust:env.rs:14-22
+pub struct TypeEnv {
+    bindings: HashMap<String, Scheme>,
+    modules: HashMap<String, HashMap<String, Scheme>>,
+}
+```
+
+### Generalization
+
+Generalization converts a type into a polymorphic type scheme by quantifying free type variables:
+
+```rust:env.rs:356-367
+pub fn generalize(&self, ty: &Type) -> Scheme {
+    let env_vars = self.free_vars();
+    let ty_vars = ty.free_vars();
+    let vars: Vec<TypeVar> = ty_vars.difference(&env_vars).copied().collect();
+    
+    if vars.is_empty() {
+        Scheme::mono(ty.clone())
+    } else {
+        Scheme::poly(vars, ty.clone())
+    }
+}
+```
+
+### Instantiation
+
+Instantiation replaces bound type variables with fresh ones when using a polymorphic value:
+
+```rust:env.rs:400-410
+pub fn instantiate(&mut self, scheme: &Scheme) -> Type {
+    if scheme.vars.is_empty() {
+        return scheme.ty.clone();
+    }
+    
+    let mut subst = Subst::new();
+    for var in &scheme.vars {
+        subst.bind(*var, self.fresh_type());
+    }
+    subst.apply(&scheme.ty)
+}
+```
+
+## Type Checking Process
+
+The type checking process follows these steps:
+
+1. **Parse** the source code into an abstract syntax tree (AST)
+2. **Generate** type variables and constraints by walking the AST
+3. **Unify** types to solve constraints and find substitutions
+4. **Apply** substitutions to get final concrete types
+5. **Generalize** types for let-bindings to enable polymorphism
+
+<Warning>
+Type errors are detected during the unification phase and reported with span information pointing to the location in the source code.
+</Warning>
+
+## Built-in Types and Functions
+
+The type environment includes built-in types and functions:
+
+```rust:env.rs:34-50
+// print: a -> ()
+env.insert(
+    "print".to_string(),
+    Scheme::poly(vec![a], Type::fun(Type::Var(a), Type::Unit)),
+);
+
+// println: a -> ()
+env.insert(
+    "println".to_string(),
+    Scheme::poly(vec![a], Type::fun(Type::Var(a), Type::Unit)),
+);
+
+// show: a -> String
+env.insert(
+    "show".to_string(),
+    Scheme::poly(vec![a], Type::fun(Type::Var(a), Type::String)),
+);
+```
+
+## Example Type Derivations
+
+### Simple Function
+
+```ivy
+fn double(x) => x * 2
+```
+
+Type derivation:
+1. `x` gets fresh type variable `a`
+2. `*` requires both operands to be `Int` or `Float`
+3. `2` has type `Int`
+4. Unify `a` with `Int`
+5. Final type: `Int -> Int`
+
+### Polymorphic Function
+
+```ivy
+fn id(x) => x
+```
+
+Type derivation:
+1. `x` gets fresh type variable `a`
+2. Body returns `x`, so return type is `a`
+3. Function type: `a -> a`
+4. Generalize: `forall a. a -> a`
+
+### List Operations
+
+```ivy
+fn head(xs) => match xs with
+  | [] -> None
+  | [x | _] -> Some(x)
+end
+```
+
+Type derivation:
+1. `xs` gets fresh type variable `a`
+2. Pattern `[]` unifies `a` with `[b]` for some fresh `b`
+3. Pattern `[x | _]` confirms `xs : [b]`, binds `x : b`
+4. `None : Option<c>`, `Some(x) : Option<b>`
+5. Unify return types: `Option<b>`
+6. Final type: `[b] -> Option<b>`
+7. Generalize: `forall b. [b] -> Option<b>`
+
+## Type Annotations
+
+While type inference works without annotations, you can add explicit type signatures:
+
+```ivy
+-- Function signature
+fn add(x: Int, y: Int): Int => x + y
+
+-- Let binding with type
+let result: Option<Int> = Some(42);
+
+-- Type signature declaration
+add :: Int -> Int -> Int
+```
+
+Type annotations serve as:
+- Documentation for readers
+- Constraints for the type checker
+- Early error detection
+
+## See Also
+
+- [Type Inference](/reference/type-inference) - Details of the Hindley-Milner algorithm
+- [Built-in Types](/reference/builtin-types) - Comprehensive guide to primitive and composite types
+- [Pattern Matching](/language/pattern-matching) - Type-safe pattern matching

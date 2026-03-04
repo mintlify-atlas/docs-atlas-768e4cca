@@ -1,0 +1,373 @@
+---
+title: 'Type Checking'
+description: 'Type checking mode and type inference in Ivy'
+---
+
+## Overview
+
+Ivy is a statically-typed language with Hindley-Milner type inference. The type checker runs automatically before execution, ensuring type safety at compile time. You can also run the type checker independently using the `--check` flag.
+
+## Type Checking Mode
+
+### Standalone Type Checking
+
+Run type checking without executing the program:
+
+```bash
+ivy --check <file>
+```
+
+**Success Example:**
+```bash
+$ ivy --check examples/fibonacci.ivy
+OK: examples/fibonacci.ivy type checks successfully
+```
+
+**Error Example:**
+```bash
+$ ivy --check examples/error.ivy
+
+Error: type mismatch
+  ┌─ examples/error.ivy:5:20
+  │
+5 │ let result = add 5 "hello"
+  │              ^^^^^^^^^^^^^ expected Int, found String
+```
+
+<Note>
+Type checking exits with status code 0 on success and 1 on failure, making it ideal for CI/CD integration.
+</Note>
+
+### Automatic Type Checking
+
+When running files normally, type checking happens automatically before execution:
+
+```bash
+ivy program.ivy
+```
+
+The execution pipeline is:
+1. **Parse** the source code
+2. **Type check** the program
+3. **Execute** if type checking succeeds
+
+If type checking fails, the program will not execute.
+
+## Type Inference
+
+Ivy uses Hindley-Milner type inference, which means you rarely need to write type annotations. The type checker can infer types automatically:
+
+<CodeGroup>
+```ivy Type Inference Examples
+-- Type is inferred as Int -> Int
+let double x = x * 2
+
+-- Type is inferred as List Int -> Int
+let sum xs = fold (+) 0 xs
+
+-- Type is inferred as a -> a -> Bool
+let equal x y = x == y
+
+-- Polymorphic type: a -> List a -> List a
+let cons x xs = [x] ++ xs
+```
+
+```ivy Type Annotations (Optional)
+-- You can optionally add type annotations
+let double : Int -> Int
+let double x = x * 2
+
+-- Annotations are checked against inferred types
+let sum : List Int -> Int
+let sum xs = fold (+) 0 xs
+```
+</CodeGroup>
+
+## REPL Type Inspection
+
+The REPL provides the `:type` command to inspect types without evaluation:
+
+```
+ivy> :type 42
+42 :: Int
+
+ivy> :type "hello"
+"hello" :: String
+
+ivy> :type [1, 2, 3]
+[1, 2, 3] :: List Int
+
+ivy> :type (\x -> x + 1)
+(\x -> x + 1) :: Int -> Int
+
+ivy> :type map
+map :: (a -> b) -> List a -> List b
+```
+
+**Usage:**
+```
+:type <expression>
+:t <expression>
+```
+
+## Type Error Messages
+
+Ivy provides detailed type error messages with source code context:
+
+### Type Mismatch
+
+```
+Error: type mismatch
+  ┌─ example.ivy:3:15
+  │
+3 │ let x = add 5 "hello"
+  │         ^^^^^^^^^^^^^ expected Int, found String
+```
+
+### Undefined Variable
+
+```
+Error: undefined variable
+  ┌─ example.ivy:7:10
+  │
+7 │ let y = unknown_var
+  │         ^^^^^^^^^^^ 'unknown_var' not found
+```
+
+### Arity Mismatch
+
+```
+Error: arity mismatch
+  ┌─ example.ivy:4:15
+  │
+4 │ let result = add 1 2 3
+  │              ^^^^^^^^^ expected 2 args, got 3
+```
+
+### Pattern Mismatch
+
+```
+Error: pattern mismatch
+  ┌─ example.ivy:10:5
+  │
+10│ let [x, y] = [1, 2, 3]
+  │     ^^^^^^ pattern mismatch
+```
+
+### Non-exhaustive Patterns
+
+```
+Error: non-exhaustive patterns
+  ┌─ example.ivy:12:3
+  │
+12│   case opt of
+  │   ^^^^^^^^^^ non-exhaustive patterns
+```
+
+## Type Checking with Modules
+
+When type checking files with imports, Ivy resolves and checks all imported modules:
+
+```ivy
+import Math
+import List
+
+let calculate x =
+  let squared = Math.square x
+  in List.sum [squared, x, 1]
+```
+
+The type checker:
+1. Resolves module paths using search paths
+2. Parses imported modules
+3. Type checks imported modules
+4. Builds a type environment with exports
+5. Type checks the main file with the full environment
+
+### Module Search Paths
+
+Type checking searches for modules in:
+1. Current working directory
+2. `lib/` subdirectory  
+3. Parent directory of the file being checked
+4. `lib/` directory relative to the Ivy executable
+
+## Type System Features
+
+### Primitive Types
+
+<ParamField path="Int" type="type">
+  Integer numbers
+  
+  ```ivy
+  let x : Int = 42
+  ```
+</ParamField>
+
+<ParamField path="Float" type="type">
+  Floating-point numbers
+  
+  ```ivy
+  let pi : Float = 3.14159
+  ```
+</ParamField>
+
+<ParamField path="String" type="type">
+  Text strings
+  
+  ```ivy
+  let greeting : String = "Hello"
+  ```
+</ParamField>
+
+<ParamField path="Bool" type="type">
+  Boolean values (true/false)
+  
+  ```ivy
+  let flag : Bool = true
+  ```
+</ParamField>
+
+<ParamField path="Unit" type="type">
+  Unit type (similar to void)
+  
+  ```ivy
+  let nothing : Unit = ()
+  ```
+</ParamField>
+
+### Composite Types
+
+<ParamField path="List a" type="type">
+  Homogeneous lists
+  
+  ```ivy
+  let numbers : List Int = [1, 2, 3]
+  let words : List String = ["foo", "bar"]
+  ```
+</ParamField>
+
+<ParamField path="a -> b" type="type">
+  Function types
+  
+  ```ivy
+  let add : Int -> Int -> Int
+  let add x y = x + y
+  ```
+</ParamField>
+
+<ParamField path="(a, b)" type="type">
+  Tuple types
+  
+  ```ivy
+  let pair : (Int, String) = (42, "answer")
+  ```
+</ParamField>
+
+<ParamField path="{field: Type, ...}" type="type">
+  Record types
+  
+  ```ivy
+  let person = {name: "Alice", age: 30}
+  -- Type: {name: String, age: Int}
+  ```
+</ParamField>
+
+### Polymorphic Types
+
+Ivy supports parametric polymorphism with type variables:
+
+```ivy
+-- Identity function: a -> a
+let id x = x
+
+-- List length: List a -> Int
+let length xs = fold (\acc _ -> acc + 1) 0 xs
+
+-- Map function: (a -> b) -> List a -> List b
+let map f xs = 
+  case xs of
+    [] -> []
+    (y::ys) -> (f y) :: (map f ys)
+```
+
+## Implementation Details
+
+The type checker is implemented in the `ivy_types` crate with the following key components:
+
+### TypeChecker Structure
+
+From `main.rs:266-293`:
+
+```rust
+fn check_file(path: &str, source: &str) {
+    match ivy_parse::parse(source) {
+        Ok(program) => {
+            let mut search_paths = get_default_search_paths();
+            if let Some(parent) = Path::new(path).parent() {
+                if let Ok(abs_parent) = fs::canonicalize(parent) {
+                    search_paths.insert(0, abs_parent);
+                }
+            }
+            let mut type_checker = ivy_types::TypeChecker::new();
+            let mut type_env = ivy_types::TypeEnv::with_builtins();
+
+            match ivy_types::check_program_with_env(
+                &program, 
+                &mut type_checker, 
+                &mut type_env, 
+                &search_paths
+            ) {
+                Ok(()) => {
+                    println!("{}OK{}: {} type checks successfully", 
+                        GREEN, RESET, path);
+                }
+                Err(e) => {
+                    print_type_error(e, source, path);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Err(e) => {
+            print_parse_error(e, source, path);
+            std::process::exit(1);
+        }
+    }
+}
+```
+
+### Type Environment
+
+The type environment (`TypeEnv`) maintains:
+- Built-in type definitions
+- User-defined types
+- Variable bindings and their types
+- Module exports
+
+### Error Reporting
+
+Type errors are wrapped with source code context for pretty printing using the `miette` library:
+
+```rust
+struct SourcedTypeError {
+    src: NamedSource<String>,
+    span: SourceSpan,
+    label_text: String,
+    inner: TypeError,
+}
+```
+
+See `main.rs:159-238` for the full implementation.
+
+## Best Practices
+
+1. **Let type inference work** - Avoid unnecessary type annotations
+2. **Use `:type` in REPL** - Inspect inferred types during development
+3. **Run `--check` in CI** - Validate types without execution overhead
+4. **Trust type errors** - Ivy's type system catches bugs at compile time
+5. **Leverage polymorphism** - Write generic, reusable functions
+
+## See Also
+
+- [CLI Usage](/reference/cli-usage) - Complete CLI documentation
+- [Compiler Options](/reference/compiler-options) - All compiler flags

@@ -1,0 +1,129 @@
+---
+title: 'Standard Library Overview'
+description: 'Complete reference for the Ivy standard library modules'
+---
+
+The Ivy standard library provides a comprehensive set of modules for common programming tasks. All modules are written in pure Ivy (except for low-level intrinsics implemented in Rust for performance).
+
+## Available Modules
+
+<CardGroup cols={2}>
+  <Card title="Prelude" icon="star" href="/stdlib/prelude">
+    Core types and functions automatically loaded in every program
+  </Card>
+  <Card title="List" icon="list" href="/stdlib/list">
+    Extended list manipulation and utilities
+  </Card>
+  <Card title="String" icon="text" href="/stdlib/string">
+    String manipulation and processing functions
+  </Card>
+  <Card title="Math" icon="calculator" href="/stdlib/math">
+    Mathematical operations and numeric utilities
+  </Card>
+  <Card title="File" icon="file" href="/stdlib/file">
+    File I/O operations for reading and writing files
+  </Card>
+  <Card title="Random" icon="dice" href="/stdlib/random">
+    Random number generation utilities
+  </Card>
+  <Card title="Convert" icon="arrow-right-arrow-left" href="/stdlib/convert">
+    Type conversion functions between different types
+  </Card>
+</CardGroup>
+
+## Importing Modules
+
+To use functions from standard library modules (except Prelude), import them:
+
+```ivy
+import List;
+import String;
+
+let words = String.split("hello world", " ");
+let reversed = List.reverse(words);
+```
+
+## Module Organization
+
+### Prelude Module
+The Prelude is **automatically loaded** for all Ivy programs. It includes:
+- Core types: `Bool`, `Int`, `Float`, `String`, `Option`, `Result`, `Ordering`
+- Basic list functions: `map`, `filter`, `fold`, `length`, `head`, `tail`
+- I/O functions: `print`, `println`, `show`
+- Utility functions: `id`, `const`, `compose`, `pipe`
+
+To disable automatic loading, use the `--no-prelude` compiler flag.
+
+### Extended Modules
+Other modules must be explicitly imported:
+- **List**: Advanced list operations (zip, partition, enumerate, etc.)
+- **String**: String manipulation (split, trim, replace, etc.)
+- **Math**: Mathematical functions (pow, sqrt, gcd, factorial, etc.)
+- **File**: File I/O (readFile, writeFile, appendFile, etc.)
+- **Random**: Random number generation
+- **Convert**: Type conversions (Int ↔ String, Float ↔ Int, etc.)
+
+## Design Philosophy
+
+### Functional-First
+All standard library functions are pure and side-effect free, except for:
+- I/O operations (File module, print/println)
+- Random number generation (Random module)
+
+### Type Safety
+The library embraces Ivy's strong type system:
+- Uses `Option<a>` instead of null/nil for potentially missing values
+- Uses `Result<T, E>` for operations that may fail
+- Explicit type signatures for all public functions
+
+### Performance
+Performance-critical operations are implemented as Rust intrinsics (prefixed with `__`), wrapped by user-friendly Ivy functions.
+
+## Common Patterns
+
+### Working with Options
+```ivy
+import List;
+
+let numbers = [1, 2, 3, 4, 5];
+
+-- Get the third element (safely)
+match List.nth(numbers, 2) with
+| Some(n) -> println("Found: " ++ show(n))
+| None -> println("Index out of bounds")
+end;
+```
+
+### Chaining Operations
+```ivy
+import List;
+import String;
+
+let result = [1, 2, 3, 4, 5]
+  |> List.map(fn (x) => x * 2)
+  |> List.filter(fn (x) => x > 5)
+  |> List.sum;
+
+println(show(result));  -- Output: 18
+```
+
+### Error Handling
+```ivy
+import Convert;
+
+match Convert.tryStringToInt("42") with
+| Some(n) -> println("Parsed: " ++ show(n))
+| None -> println("Parse error")
+end;
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Start with Prelude" href="/stdlib/prelude">
+    Learn about core types and functions
+  </Card>
+  <Card title="Explore Examples" href="/examples/hello-world">
+    See the standard library in action
+  </Card>
+</CardGroup>

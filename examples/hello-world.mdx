@@ -1,0 +1,183 @@
+---
+title: "Hello World"
+description: "Your first Ivy program - print a greeting to the console"
+icon: "hand-wave"
+---
+
+## Overview
+
+The classic "Hello, World!" program is the perfect introduction to Ivy. This simple example demonstrates the basic structure of an Ivy program and how to output text to the console.
+
+## Basic Hello World
+
+Here's the simplest possible Ivy program:
+
+```ivy
+println("Hello, World!");
+```
+
+**Output:**
+```
+Hello, World!
+```
+
+<Note>
+  In Ivy, statements end with a semicolon (`;`). The `println` function is a built-in that prints a value followed by a newline.
+</Note>
+
+## How It Works
+
+<Steps>
+  <Step title="The println function">
+    `println` is a built-in function available in all Ivy programs. It takes any value and prints it to standard output, followed by a newline character.
+  </Step>
+  
+  <Step title="String literals">
+    Text is enclosed in double quotes (`"`). Ivy supports Unicode strings, so you can use any characters you want.
+  </Step>
+  
+  <Step title="Statement terminator">
+    The semicolon (`;`) marks the end of a statement. This is required in Ivy for all top-level statements.
+  </Step>
+</Steps>
+
+## Variations
+
+### Using print instead of println
+
+If you don't want a newline after your output, use `print` instead:
+
+```ivy
+print("Hello, ");
+print("World!");
+```
+
+**Output:**
+```
+Hello, World!
+```
+
+### String Concatenation
+
+You can combine strings using the `++` operator:
+
+```ivy
+let greeting = "Hello";
+let target = "World";
+println(greeting ++ ", " ++ target ++ "!");
+```
+
+**Output:**
+```
+Hello, World!
+```
+
+### Using Variables
+
+Store your message in a variable before printing:
+
+```ivy
+let message = "Hello, World!";
+println(message);
+```
+
+**Output:**
+```
+Hello, World!
+```
+
+<Note>
+  The `let` keyword creates an immutable binding. Once defined, the value cannot be changed.
+</Note>
+
+## Function-Based Hello World
+
+You can define a function to print greetings:
+
+```ivy
+fn greet(name) => println("Hello, " ++ name ++ "!");
+
+greet("World");
+greet("Ivy");
+greet("Developer");
+```
+
+**Output:**
+```
+Hello, World!
+Hello, Ivy!
+Hello, Developer!
+```
+
+### How the function works
+
+- `fn greet(name)` defines a function named `greet` with one parameter `name`
+- The `=>` arrow separates parameters from the function body
+- The function body concatenates strings and calls `println`
+- Each call to `greet` passes a different argument
+
+## Pattern Matching Hello World
+
+Ivy supports pattern matching, even for simple cases:
+
+```ivy
+fn greet("World") => "Hello, World!";
+fn greet(name) => "Hello, " ++ name ++ "!";
+
+println(greet("World"));
+println(greet("Alice"));
+```
+
+**Output:**
+```
+Hello, World!
+Hello, Alice!
+```
+
+<Accordion title="Why use pattern matching?">
+  Pattern matching allows you to define different function behaviors based on the input value. When `greet` is called with `"World"`, it matches the first definition. For any other string, it matches the second definition with a catch-all pattern.
+  
+  This is a powerful feature that makes Ivy code more declarative and easier to reason about.
+</Accordion>
+
+## Multi-line Program
+
+Here's a more complete example with multiple statements:
+
+```ivy
+let greeting = "Hello";
+let name = "World";
+let punctuation = "!";
+
+let message = greeting ++ ", " ++ name ++ punctuation;
+
+println(message);
+println("Welcome to Ivy programming!");
+```
+
+**Output:**
+```
+Hello, World!
+Welcome to Ivy programming!
+```
+
+## Key Takeaways
+
+- Ivy programs consist of statements ending with semicolons
+- `println` outputs a value followed by a newline
+- Strings are concatenated with the `++` operator
+- Variables are declared with `let` and are immutable by default
+- Functions are defined with `fn` and use `=>` for single-expression bodies
+- Pattern matching provides elegant ways to handle different cases
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Fibonacci Example" icon="infinity" href="/examples/fibonacci">
+    Learn about recursion with the classic Fibonacci sequence
+  </Card>
+  
+  <Card title="Type Inference" icon="wand-magic-sparkles" href="/examples/type-inference">
+    Discover how Ivy automatically figures out types
+  </Card>
+</CardGroup>

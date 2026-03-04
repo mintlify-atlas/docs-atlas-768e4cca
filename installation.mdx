@@ -1,0 +1,208 @@
+---
+title: Installation
+description: Learn how to install the Ivy programming language on your system
+---
+
+Ivy is a statically typed functional programming language with Hindley-Milner type inference, written in Rust. Follow these steps to get Ivy up and running on your system.
+
+## Prerequisites
+
+Before installing Ivy, ensure you have the following tools installed:
+
+<Steps>
+  <Step title="Install Rust">
+    Ivy requires Rust 2021 edition or later to build from source.
+    
+    Visit [rustup.rs](https://rustup.rs/) and follow the installation instructions for your platform:
+    
+    ```bash
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    ```
+    
+    After installation, verify Rust is installed:
+    
+    ```bash
+    rustc --version
+    cargo --version
+    ```
+  </Step>
+  
+  <Step title="Install Git (optional)">
+    If you plan to clone the repository instead of downloading the source, you'll need Git:
+    
+    ```bash
+    git --version
+    ```
+    
+    If not installed, download from [git-scm.com](https://git-scm.com/).
+  </Step>
+</Steps>
+
+## Building from source
+
+Currently, Ivy is distributed as source code and needs to be compiled.
+
+<Steps>
+  <Step title="Clone the repository">
+    Clone the Ivy repository from your source control:
+    
+    ```bash
+    git clone <repository-url>
+    cd ivy
+    ```
+    
+    <Note>
+      Replace `<repository-url>` with the actual URL of the Ivy repository.
+    </Note>
+  </Step>
+  
+  <Step title="Build the project">
+    Use Cargo to build Ivy in release mode for optimal performance:
+    
+    ```bash
+    cargo build --release
+    ```
+    
+    This will compile all workspace members:
+    - `ivy-syntax` - Syntax definitions
+    - `ivy-parse` - Parser
+    - `ivy-types` - Type checker with Hindley-Milner inference
+    - `ivy-eval` - Interpreter/evaluator
+    - `ivy` - CLI and REPL
+    
+    The compiled binary will be located at `target/release/ivy`.
+  </Step>
+  
+  <Step title="Add to PATH (optional)">
+    For convenient access, add the Ivy binary to your system PATH.
+    
+    **On Linux/macOS:**
+    
+    ```bash
+    # Copy to a location in your PATH
+    sudo cp target/release/ivy /usr/local/bin/
+    
+    # Or add the target directory to your PATH
+    export PATH="$PATH:$(pwd)/target/release"
+    ```
+    
+    Add the export line to your shell configuration file (`~/.bashrc`, `~/.zshrc`, etc.) to make it permanent.
+    
+    **On Windows:**
+    
+    ```powershell
+    # Add to PATH using PowerShell
+    $env:Path += ";$(pwd)\target\release"
+    ```
+  </Step>
+  
+  <Step title="Verify installation">
+    Test that Ivy is working correctly:
+    
+    ```bash
+    ivy --help
+    ```
+    
+    You should see the usage information:
+    
+    ```
+    Usage:
+      ivy <file>      Run an Ivy program
+      ivy             Start the Ivy REPL
+    
+    Options:
+      -c, --check     Type check without running
+      -t, --tree      Print the syntax tree
+      -h, --help      Print this help message
+    ```
+  </Step>
+</Steps>
+
+## Verifying your installation
+
+Start the Ivy REPL to ensure everything is working:
+
+```bash
+ivy
+```
+
+You should see the Ivy greeting:
+
+```
+  _
+ (_)_   ___   _
+ | \ \ / / | | |
+ | |\ V /| |_| |
+ |_| \_/  \__, |
+          |___/  v0.2
+
+Ivy - the friendly functional programming language
+Type :help for commands, :q to quit
+
+ivy>
+```
+
+<Note>
+  The REPL automatically loads the standard prelude, which provides core types like `Option`, `Result`, and functions for working with lists, I/O, and more.
+</Note>
+
+## Development build
+
+If you're contributing to Ivy or need debug information:
+
+```bash
+# Build in debug mode (faster compilation, slower execution)
+cargo build
+
+# Run without building
+cargo run
+
+# Run with a file
+cargo run -- path/to/program.ivy
+
+# Run tests
+cargo test
+```
+
+<Warning>
+  Debug builds are significantly slower than release builds. Use `cargo build --release` for normal usage.
+</Warning>
+
+## Troubleshooting
+
+### Compilation errors
+
+If you encounter compilation errors:
+
+1. Ensure you have the latest stable Rust: `rustup update stable`
+2. Clean the build cache: `cargo clean`
+3. Rebuild: `cargo build --release`
+
+### Missing dependencies
+
+Ivy uses several Rust crates defined in `Cargo.toml`:
+- `thiserror` - Error handling
+- `miette` - Fancy error reporting
+- `colored` - Terminal colors
+- `rustyline` - Line editing in REPL
+- `rand` - Random number generation
+
+These are automatically downloaded by Cargo during the build process. If you have network issues, check your internet connection or proxy settings.
+
+### Platform-specific issues
+
+**Linux:** You may need to install `libssl-dev` or `pkg-config`:
+```bash
+sudo apt-get install libssl-dev pkg-config
+```
+
+**macOS:** Ensure Xcode command line tools are installed:
+```bash
+xcode-select --install
+```
+
+**Windows:** You may need the Visual Studio C++ build tools. Download from the [Visual Studio website](https://visualstudio.microsoft.com/downloads/).
+
+## Next steps
+
+Now that you have Ivy installed, check out the [Quick Start](/quickstart) guide to write your first Ivy program!

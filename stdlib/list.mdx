@@ -1,0 +1,430 @@
+---
+title: 'List Module'
+description: 'Extended list manipulation and utility functions'
+---
+
+The List module provides advanced list operations beyond those in the Prelude. Import it to access additional list utilities.
+
+```ivy
+import List;
+```
+
+<Note>
+  Basic list functions like `map`, `filter`, and `fold` are in the [Prelude](/stdlib/prelude) and don't require importing.
+</Note>
+
+## Core Utilities
+
+### reverse
+```ivy
+pub fn reverse(xs: [a]): [a]
+```
+Reverses a list.
+
+**Example:**
+```ivy
+List.reverse([1, 2, 3, 4])  -- [4, 3, 2, 1]
+```
+
+### concat
+```ivy
+pub fn concat(xs: [a], ys: [a]): [a]
+```
+Appends two lists together.
+
+**Example:**
+```ivy
+List.concat([1, 2], [3, 4])  -- [1, 2, 3, 4]
+```
+
+## Indexed Access
+
+### nth
+```ivy
+pub fn nth(xs: [a], n: Int): Option<a>
+```
+Returns the element at index `n` (0-indexed), or `None` if out of bounds.
+
+**Example:**
+```ivy
+List.nth([10, 20, 30], 1)  -- Some(20)
+List.nth([10, 20, 30], 5)  -- None
+```
+
+### last
+```ivy
+pub fn last(xs: [a]): Option<a>
+```
+Returns the last element of a list.
+
+**Example:**
+```ivy
+List.last([1, 2, 3])  -- Some(3)
+List.last([])         -- None
+```
+
+### init
+```ivy
+pub fn init(xs: [a]): Option<[a]>
+```
+Returns all elements except the last one.
+
+**Example:**
+```ivy
+List.init([1, 2, 3, 4])  -- Some([1, 2, 3])
+List.init([1])           -- Some([])
+List.init([])            -- None
+```
+
+## Searching
+
+### find
+```ivy
+pub fn find(pred: a -> Bool, xs: [a]): Option<a>
+```
+Returns the first element matching the predicate.
+
+**Example:**
+```ivy
+List.find(fn (x) => x > 10, [5, 15, 20])  -- Some(15)
+List.find(fn (x) => x > 30, [5, 15, 20])  -- None
+```
+
+### findIndex
+```ivy
+pub fn findIndex(pred: a -> Bool, xs: [a]): Option<Int>
+```
+Returns the index of the first element matching the predicate.
+
+**Example:**
+```ivy
+List.findIndex(fn (x) => x > 10, [5, 15, 20])  -- Some(1)
+```
+
+### elem
+```ivy
+pub fn elem(x: a, xs: [a], eq: a -> a -> Bool): Bool
+```
+Checks if an element exists in the list using a custom equality function.
+
+**Example:**
+```ivy
+let eq = fn (a, b) => a == b;
+List.elem(3, [1, 2, 3, 4], eq)  -- true
+List.elem(5, [1, 2, 3, 4], eq)  -- false
+```
+
+## Combining Lists
+
+### zip
+```ivy
+pub fn zip(xs: [a], ys: [b]): [(a, b)]
+```
+Zips two lists into a list of pairs. Stops at the shorter list.
+
+**Example:**
+```ivy
+List.zip([1, 2, 3], ["a", "b", "c"])  -- [(1, "a"), (2, "b"), (3, "c")]
+List.zip([1, 2], ["a", "b", "c"])     -- [(1, "a"), (2, "b")]
+```
+
+### zipWith
+```ivy
+pub fn zipWith(f: a -> b -> c, xs: [a], ys: [b]): [c]
+```
+Zips two lists with a combining function.
+
+**Example:**
+```ivy
+List.zipWith(fn (x, y) => x + y, [1, 2, 3], [10, 20, 30])  -- [11, 22, 33]
+```
+
+### unzip
+```ivy
+pub fn unzip(pairs: [(a, b)]): ([a], [b])
+```
+Splits a list of pairs into two separate lists.
+
+**Example:**
+```ivy
+List.unzip([(1, "a"), (2, "b")])  -- ([1, 2], ["a", "b"])
+```
+
+### enumerate
+```ivy
+pub fn enumerate(xs: [a]): [(Int, a)]
+```
+Pairs each element with its index (0-indexed).
+
+**Example:**
+```ivy
+List.enumerate(["a", "b", "c"])  -- [(0, "a"), (1, "b"), (2, "c")]
+```
+
+## Generating Lists
+
+### replicate
+```ivy
+pub fn replicate(n: Int, x: a): [a]
+```
+Creates a list of `n` copies of value `x`.
+
+**Example:**
+```ivy
+List.replicate(4, "hi")  -- ["hi", "hi", "hi", "hi"]
+```
+
+### range
+```ivy
+pub fn range(start: Int, stop: Int): [Int]
+```
+Generates a list of integers from `start` to `stop` (inclusive).
+
+**Example:**
+```ivy
+List.range(1, 5)   -- [1, 2, 3, 4, 5]
+List.range(5, 1)   -- []
+```
+
+### rangeStep
+```ivy
+pub fn rangeStep(start: Int, stop: Int, step: Int): [Int]
+```
+Generates a range with a custom step size.
+
+**Example:**
+```ivy
+List.rangeStep(0, 10, 2)   -- [0, 2, 4, 6, 8, 10]
+List.rangeStep(10, 0, -2)  -- [10, 8, 6, 4, 2, 0]
+```
+
+## Transformations
+
+### intersperse
+```ivy
+pub fn intersperse(sep: a, xs: [a]): [a]
+```
+Inserts a separator between all elements.
+
+**Example:**
+```ivy
+List.intersperse(0, [1, 2, 3])  -- [1, 0, 2, 0, 3]
+```
+
+### flatten
+```ivy
+pub fn flatten(xss: [[a]]): [a]
+```
+Flattens a list of lists into a single list.
+
+**Example:**
+```ivy
+List.flatten([[1, 2], [3, 4], [5]])  -- [1, 2, 3, 4, 5]
+```
+
+### concatMap
+```ivy
+pub fn concatMap(f: a -> [b], xs: [a]): [b]
+```
+Maps a function that returns a list, then flattens the result (also known as flatMap or bind).
+
+**Example:**
+```ivy
+List.concatMap(fn (x) => [x, x * 2], [1, 2, 3])  -- [1, 2, 2, 4, 3, 6]
+```
+
+## Partitioning
+
+### partition
+```ivy
+pub fn partition(pred: a -> Bool, xs: [a]): ([a], [a])
+```
+Splits a list into two: elements where predicate is true, and elements where it's false.
+
+**Example:**
+```ivy
+List.partition(fn (x) => x % 2 == 0, [1, 2, 3, 4, 5])
+-- ([2, 4], [1, 3, 5])
+```
+
+### span
+```ivy
+pub fn span(pred: a -> Bool, xs: [a]): ([a], [a])
+```
+Returns the longest prefix where predicate is true, plus the rest.
+
+**Example:**
+```ivy
+List.span(fn (x) => x < 3, [1, 2, 3, 4, 1])
+-- ([1, 2], [3, 4, 1])
+```
+
+### break
+```ivy
+pub fn break(pred: a -> Bool, xs: [a]): ([a], [a])
+```
+Splits at the first element where predicate is true (opposite of span).
+
+**Example:**
+```ivy
+List.break(fn (x) => x > 2, [1, 2, 3, 4])
+-- ([1, 2], [3, 4])
+```
+
+### splitAt
+```ivy
+pub fn splitAt(n: Int, xs: [a]): ([a], [a])
+```
+Splits a list at index `n`.
+
+**Example:**
+```ivy
+List.splitAt(2, [1, 2, 3, 4, 5])  -- ([1, 2], [3, 4, 5])
+```
+
+## Numeric List Functions
+
+### sum
+```ivy
+pub fn sum(xs: [Int]): Int
+```
+Returns the sum of all integers in a list.
+
+**Example:**
+```ivy
+List.sum([1, 2, 3, 4, 5])  -- 15
+List.sum([])               -- 0
+```
+
+### product
+```ivy
+pub fn product(xs: [Int]): Int
+```
+Returns the product of all integers in a list.
+
+**Example:**
+```ivy
+List.product([2, 3, 4])  -- 24
+List.product([])         -- 1
+```
+
+### maximum
+```ivy
+pub fn maximum(xs: [Int]): Option<Int>
+```
+Returns the maximum element, or `None` for empty list.
+
+**Example:**
+```ivy
+List.maximum([3, 1, 4, 1, 5])  -- Some(5)
+List.maximum([])               -- None
+```
+
+### minimum
+```ivy
+pub fn minimum(xs: [Int]): Option<Int>
+```
+Returns the minimum element, or `None` for empty list.
+
+**Example:**
+```ivy
+List.minimum([3, 1, 4, 1, 5])  -- Some(1)
+List.minimum([])               -- None
+```
+
+## Other Utilities
+
+### dedup
+```ivy
+pub fn dedup(xs: [a], eq: a -> a -> Bool): [a]
+```
+Removes consecutive duplicates using a custom equality function.
+
+**Example:**
+```ivy
+let eq = fn (a, b) => a == b;
+List.dedup([1, 1, 2, 2, 3, 2, 2], eq)  -- [1, 2, 3, 2]
+```
+
+### takeWhile
+```ivy
+pub fn takeWhile(pred: a -> Bool, xs: [a]): [a]
+```
+Takes elements while predicate is true.
+
+**Example:**
+```ivy
+List.takeWhile(fn (x) => x < 5, [1, 2, 3, 6, 7])
+-- [1, 2, 3]
+```
+
+### dropWhile
+```ivy
+pub fn dropWhile(pred: a -> Bool, xs: [a]): [a]
+```
+Drops elements while predicate is true.
+
+**Example:**
+```ivy
+List.dropWhile(fn (x) => x < 5, [1, 2, 3, 6, 7])
+-- [6, 7]
+```
+
+## Common Patterns
+
+<Accordion title="Working with indices">
+```ivy
+import List;
+
+-- Get element at index with default value
+let getOrDefault = fn (xs, i, default) => 
+  unwrapOr(List.nth(xs, i), default);
+
+-- Find all indices matching a condition
+let findAllIndices = fn (pred, xs) =>
+  List.enumerate(xs)
+  |> filter(fn ((_, x)) => pred(x))
+  |> map(fn ((i, _)) => i);
+```
+</Accordion>
+
+<Accordion title="Chunking lists">
+```ivy
+import List;
+
+-- Split list into chunks of size n
+fn chunks(n: Int, xs: [a]): [[a]] =>
+  if isEmpty?(xs) then []
+  else do {
+    let (chunk, rest) = List.splitAt(n, xs);
+    [chunk | chunks(n, rest)]
+  };
+```
+</Accordion>
+
+<Accordion title="Working with pairs">
+```ivy
+import List;
+
+let pairs = [(1, "one"), (2, "two"), (3, "three")];
+
+-- Extract first elements
+let firsts = map(fn ((x, _)) => x, pairs);  -- [1, 2, 3]
+
+-- Or use unzip
+let (numbers, words) = List.unzip(pairs);
+-- numbers = [1, 2, 3]
+-- words = ["one", "two", "three"]
+```
+</Accordion>
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="Prelude" href="/stdlib/prelude">
+    Basic list functions (map, filter, fold)
+  </Card>
+  <Card title="String Module" href="/stdlib/string">
+    String manipulation functions
+  </Card>
+</CardGroup>

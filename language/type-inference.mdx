@@ -1,0 +1,440 @@
+---
+title: Type Inference
+description: Deep dive into Ivy's Hindley-Milner type inference system
+---
+
+Ivy uses the Hindley-Milner type inference algorithm to automatically deduce types without requiring explicit annotations. This provides both safety and convenience.
+
+## How Type Inference Works
+
+The type checker analyzes your code to determine the most general type for each expression:
+
+```ivy
+-- No type annotations needed
+let double = fn (x) => x + x
+-- Inferred type: Int -> Int
+
+let identity = fn (x) => x  
+-- Inferred type: a -> a (polymorphic)
+
+let pair = fn (x, y) => (x, y)
+-- Inferred type: a -> b -> (a, b)
+```
+
+<Note>
+Type inference happens at compile time. Once types are inferred, they're checked for consistency throughout your program.
+</Note>
+
+## The Inference Process
+
+The type checker follows these steps:
+
+1. **Generate type variables** for unknown types
+2. **Collect constraints** from expressions and operations
+3. **Solve constraints** through unification
+4. **Generalize** to create polymorphic types
+5. **Instantiate** polymorphic types at use sites
+
+### Example: Inference in Action
+
+```ivy
+fn map(f, xs) =>
+  match xs with
+  | [] -> []
+  | [y | ys] -> [f(y) | map(f, ys)]
+  end
+```
+
+Inference steps:
+
+1. Assign type variables: `f: a`, `xs: b`
+2. From `[]`: `xs` must be a list, so `b = [c]`
+3. From `[y | ys]`: `y: c`, `ys: [c]`
+4. From `f(y)`: `f` must be `c -> d` for some `d`
+5. From `[f(y) | ...]`: result is `[d]`
+6. Final type: `(c -> d) -> [c] -> [d]`
+7. Generalize: `(a -> b) -> [a] -> [b]`
+
+## Type Variables
+
+Type variables represent unknown types:
+
+```ivy
+-- Type variables: a, b, c, etc.
+fn const(x, y) => x
+-- a -> b -> a
+
+fn flip(f) => fn (y, x) => f(x, y)
+-- (a -> b -> c) -> b -> a -> c
+```
+
+<Tip>
+Type variables are written in lowercase and typically use single letters: `a`, `b`, `c`, etc.
+</Tip>
+
+## Polymorphic Functions
+
+Functions can be polymorphic - working with multiple types:
+
+```ivy
+-- Works for any type 'a'
+fn length(xs: [a]): Int =>
+  match xs with
+  | [] -> 0
+  | [_ | rest] -> 1 + length(rest)
+  end
+
+let numLength = length([1, 2, 3])        -- a = Int
+let strLength = length(["a", "b", "c"])  -- a = String
+```
+
+### Generalization
+
+The type checker generalizes let-bound functions:
+
+```ivy
+let id = fn (x) => x
+-- Generalized to: forall a. a -> a
+
+let num = id(42)       -- Instantiate: a = Int
+let str = id("hello")  -- Instantiate: a = String
+```
+
+### No Generalization in Lambdas
+
+Lambda parameters are not generalized:
+
+```ivy
+let apply = fn (f) => (f(1), f("hello"))
+-- Error: f cannot be both Int -> b and String -> b
+
+-- Solution: make it polymorphic with annotations
+let apply: (forall a. a -> a) -> (Int, String) = 
+  fn (f) => (f(1), f("hello"))
+```
+
+## Unification
+
+Unification determines if two types can be made equal:
+
+```ivy
+-- These unify:
+Int ~ Int                 -- ✓ Same concrete type
+a ~ Int                   -- ✓ Set a = Int
+[a] ~ [Int]               -- ✓ Set a = Int
+(a, b) ~ (Int, String)    -- ✓ Set a = Int, b = String
+
+-- These don't unify:
+Int ~ String              -- ✗ Different concrete types
+[a] ~ a                   -- ✗ Occurs check failure (infinite type)
+Int ~ (Int, Int)          -- ✗ Different type constructors
+```
+
+### Occurs Check
+
+The occurs check prevents infinite types:
+
+```ivy
+-- This would require: a = [a] = [[a]] = [[[a]]] = ...
+fn infinite(x) => [x, [x, [[x]]]]
+-- Error: occurs check failed
+```
+
+## Type Constraints
+
+Constraints ensure type safety:
+
+### Arithmetic Constraints
+
+```ivy
+fn add(x, y) => x + y
+-- Constraint: x and y must be Int (or Float)
+-- Inferred: Int -> Int -> Int
+```
+
+### Comparison Constraints
+
+```ivy
+fn max(x, y) => if x > y then x else y
+-- Constraint: x and y must be comparable
+-- Inferred: Int -> Int -> Int
+```
+
+### List Constraints
+
+```ivy
+fn append(xs, ys) => xs ++ ys  
+-- Constraint: xs and ys must be lists of the same type
+-- Inferred: [a] -> [a] -> [a]
+```
+
+## Annotation Benefits
+
+While inference is powerful, annotations provide benefits:
+
+### Better Error Messages
+
+<CodeGroup>
+
+```ivy Without Annotations
+fn process(data) => do {
+  let x = data.field;
+  let y = x + 1;
+  y * 2
+}
+
+-- Error at use site (far from source):
+-- Type mismatch: expected Int, got String
+```
+
+```ivy With Annotations
+fn process(data: Record): Int => do {
+  let x = data.field;
+  let y = x + 1;  -- Error here: field is String
+  y * 2
+}
+
+-- Error at definition (close to source):
+-- Type mismatch in addition: expected Int, got String
+```
+
+</CodeGroup>
+
+### Documentation
+
+Annotations serve as inline documentation:
+
+```ivy
+-- Clear intent
+fn fold(f: b -> a -> b, init: b, xs: [a]): b => ...
+
+-- Less clear
+fn fold(f, init, xs) => ...
+```
+
+### Early Error Detection
+
+```ivy
+fn compute(x: Int): String => x + 1  
+-- Error: expected String, got Int (caught immediately)
+
+fn compute(x) => x + 1
+-- Error might appear later at call site
+```
+
+## Type Schemes
+
+Type schemes represent polymorphic types:
+
+```ivy
+-- Monomorphic type (no quantification)
+let x: Int = 42
+
+-- Polymorphic type scheme
+let id: forall a. a -> a = fn (x) => x
+
+-- Multiple type variables
+let map: forall a b. (a -> b) -> [a] -> [b] = ...
+```
+
+### Instantiation
+
+Polymorphic types are instantiated at use sites:
+
+```ivy
+let id: forall a. a -> a = fn (x) => x
+
+let num = id(42)       
+-- Instantiate: a := Int
+-- Type: Int -> Int applied to Int
+
+let str = id("hello")  
+-- Instantiate: a := String  
+-- Type: String -> String applied to String
+```
+
+## Recursion and Inference
+
+Recursive functions use a preliminary type during inference:
+
+```ivy
+fn factorial(n) =>
+  if n <= 1 then 1
+  else n * factorial(n - 1)
+
+-- Inference process:
+-- 1. Assume factorial: a -> b (fresh variables)
+-- 2. From n <= 1: n must be Int
+-- 3. From n * ...: result must be Int
+-- 4. From recursive call: a = Int, b = Int  
+-- 5. Final: Int -> Int
+```
+
+### Mutual Recursion
+
+Mutually recursive functions are inferred together:
+
+```ivy
+fn even?(0): Bool => true;
+fn even?(n): Bool => odd?(n - 1);
+
+fn odd?(0): Bool => false;
+fn odd?(n): Bool => even?(n - 1);
+
+-- Both inferred: Int -> Bool
+```
+
+## Let Polymorphism
+
+Let-bound values can be polymorphic:
+
+```ivy
+let id = fn (x) => x  -- Polymorphic: forall a. a -> a
+
+let a = id(1)       -- a: Int
+let b = id("hi")    -- b: String
+```
+
+But lambda parameters cannot:
+
+```ivy
+fn twice(f) => fn (x) => f(f(x))
+-- f is monomorphic within the body
+-- Type: (a -> a) -> a -> a
+```
+
+## Principal Types
+
+Hindley-Milner finds the most general (principal) type:
+
+```ivy
+fn compose(f, g) => fn (x) => f(g(x))
+
+-- Possible types:
+-- (String -> Int) -> (Bool -> String) -> Bool -> Int
+-- (Int -> Int) -> (Int -> Int) -> Int -> Int
+-- etc.
+
+-- Principal (most general) type:
+-- (b -> c) -> (a -> b) -> a -> c
+```
+
+<Note>
+The principal type is the most general type from which all other valid types can be obtained through substitution.
+</Note>
+
+## Type Inference Limitations
+
+### Higher-Rank Types
+
+Hindley-Milner cannot infer higher-rank types:
+
+```ivy
+-- Requires explicit annotation
+let applyTwice: (forall a. a -> a) -> (Int, String) =>
+  fn (f) => (f(1), f("hello"))
+
+-- Cannot be inferred automatically
+let applyTwice = fn (f) => (f(1), f("hello"))
+-- Error: f cannot be both Int -> b and String -> c
+```
+
+### Numeric Overloading
+
+Numeric operations default to `Int`:
+
+```ivy
+fn add(x, y) => x + y
+-- Inferred: Int -> Int -> Int (not polymorphic over numbers)
+
+-- For Float, use explicit annotation:
+fn addFloat(x: Float, y: Float): Float => x + y
+```
+
+## Type Debugging
+
+If inference fails, try these techniques:
+
+### Add Gradual Annotations
+
+```ivy
+-- Start with no annotations
+fn process(data) => ...
+-- Error: ambiguous type
+
+-- Add parameter annotation
+fn process(data: Record) => ...
+-- Still error
+
+-- Add return type
+fn process(data: Record): String => ...
+-- Success!
+```
+
+### Isolate Subsections
+
+```ivy
+-- Complex expression with error
+let result = foo(bar(baz(quux(x))))
+
+-- Break it down
+let a = quux(x)
+let b = baz(a)
+let c = bar(b)  -- Error here: expected Int, got String
+let result = foo(c)
+```
+
+### Check Type Signatures
+
+Use the REPL to check inferred types:
+
+```ivy
+> :type map
+(a -> b) -> [a] -> [b]
+
+> :type filter
+(a -> Bool) -> [a] -> [a]
+```
+
+## Best Practices
+
+### Annotate Public APIs
+
+```ivy
+-- Public: always annotate
+pub fn parseUser(json: String): Result<User, Error>
+
+-- Private: annotations optional
+fn helper(x) => x + 1
+```
+
+### Use Inference for Local Bindings
+
+```ivy
+fn process(items: [Item]): [Result] => do {
+  -- No need to annotate locals
+  let valid = filter(isValid, items);
+  let processed = map(transform, valid);
+  map(toResult, processed)
+}
+```
+
+### Annotate Complex Functions
+
+```ivy
+-- Complex: add annotations for clarity
+fn fold(f: b -> a -> b, init: b, xs: [a]): b =>
+  match xs with
+  | [] -> init
+  | [y | ys] -> fold(f, f(init, y), ys)
+  end
+
+-- Simple: inference is fine  
+fn double(x) => x * 2
+```
+
+## Next Steps
+
+- [Type System](/language/types) - Understand Ivy's type system
+- [Functions](/language/functions) - See inference in action
+- [Pattern Matching](/language/pattern-matching) - Learn about pattern type checking

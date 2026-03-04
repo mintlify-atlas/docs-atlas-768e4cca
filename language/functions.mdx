@@ -1,0 +1,382 @@
+---
+title: Functions
+description: Master function definitions, closures, recursion, and higher-order functions in Ivy
+---
+
+Functions are first-class values in Ivy. They can be passed as arguments, returned from other functions, and stored in data structures.
+
+## Function Declarations
+
+The basic syntax for defining functions uses the `fn` keyword:
+
+```ivy
+fn greet(name: String): String => "Hello, " ++ name ++ "!"
+
+-- Call the function
+let message = greet("Alice")  -- "Hello, Alice!"
+```
+
+### Multiple Parameters
+
+Functions can take multiple parameters:
+
+```ivy
+fn add(x: Int, y: Int): Int => x + y
+
+fn combine(a: String, b: String, sep: String): String =>
+  a ++ sep ++ b
+
+let result = combine("hello", "world", " ")  -- "hello world"
+```
+
+### Type Inference
+
+Parameter and return types can often be omitted:
+
+```ivy
+-- Types inferred from usage
+fn double(x) => x + x           -- Inferred: Int -> Int
+fn identity(x) => x             -- Inferred: a -> a (polymorphic)
+fn pair(x, y) => (x, y)         -- Inferred: a -> b -> (a, b)
+```
+
+<Tip>
+While type inference is powerful, explicit annotations improve code clarity and provide better error messages.
+</Tip>
+
+## Pattern Matching in Functions
+
+Function definitions can use pattern matching directly on parameters:
+
+```ivy
+-- Pattern match on literals
+fn not(true): Bool => false;
+fn not(false): Bool => true;
+
+-- Pattern match on constructors
+fn unwrap(Some(x)) => x;
+-- unwrap(None) would cause a runtime error!
+
+-- Pattern match on lists
+fn head([]): Option<a> => None;
+fn head([x | _]): Option<a> => Some(x);
+
+-- Pattern match on tuples
+fn fst((x, _)) => x;
+fn snd((_, y)) => y;
+```
+
+<Note>
+Multiple function clauses are checked in order. The first matching pattern is used.
+</Note>
+
+### Wildcard Pattern
+
+Use `_` for values you don't need:
+
+```ivy
+fn const(x: a, _: b): a => x
+
+fn length([]): Int => 0;
+fn length([_ | xs]): Int => 1 + length(xs);
+```
+
+## Guarded Functions
+
+Functions can have guard clauses for conditional logic:
+
+```ivy
+fn abs(n: Int): Int
+| n >= 0 => n
+| n < 0 => -n
+;
+
+fn sign(x: Int): String
+| x > 0 => "positive"
+| x < 0 => "negative"
+| x == 0 => "zero"
+;
+```
+
+Guards are checked in order, and the first true guard's body is executed.
+
+## Anonymous Functions (Lambdas)
+
+Create functions without names using the `fn` keyword:
+
+```ivy
+-- Simple lambda
+let increment = fn (x) => x + 1
+
+-- Lambda with type annotations
+let add: Int -> Int -> Int = fn (x, y) => x + y
+
+-- Multi-line lambda with do block
+let complex = fn (x, y) => do {
+  let sum = x + y;
+  let product = x * y;
+  (sum, product)
+}
+```
+
+### Lambdas in Higher-Order Functions
+
+Lambdas are commonly used with higher-order functions:
+
+```ivy
+let numbers = [1, 2, 3, 4, 5]
+
+-- Map with lambda
+let doubled = map(fn (x) => x * 2, numbers)
+
+-- Filter with lambda
+let evens = filter(fn (x) => x % 2 == 0, numbers)
+
+-- Fold with lambda
+let sum = foldl(fn (acc, x) => acc + x, 0, numbers)
+```
+
+## Recursion
+
+Ivy supports recursion for iterative computations:
+
+```ivy
+-- Simple recursion
+fn factorial(n: Int): Int =>
+  if n <= 1 then 1
+  else n * factorial(n - 1)
+
+-- Recursion with pattern matching
+fn length([]): Int => 0;
+fn length([_ | xs]): Int => 1 + length(xs);
+
+-- Multiple recursive calls
+fn fibonacci(n: Int): Int =>
+  if n <= 0 then 0
+  else if n == 1 then 1
+  else fibonacci(n - 1) + fibonacci(n - 2)
+```
+
+### Tail Recursion
+
+Tail-recursive functions can be optimized by the compiler:
+
+```ivy
+-- Tail-recursive factorial with accumulator
+fn factorialHelper(n: Int, acc: Int): Int =>
+  if n <= 1 then acc
+  else factorialHelper(n - 1, n * acc)
+
+pub fn factorial(n: Int): Int => factorialHelper(n, 1)
+
+-- Tail-recursive list reversal
+fn reverseHelper([], acc: [a]): [a] => acc;
+fn reverseHelper([x | xs], acc: [a]): [a] => reverseHelper(xs, [x | acc]);
+
+pub fn reverse(xs: [a]): [a] => reverseHelper(xs, [])
+```
+
+<Tip>
+Tail recursion is when the recursive call is the last operation in the function. This allows the compiler to optimize it into a loop.
+</Tip>
+
+## Higher-Order Functions
+
+Functions that take or return other functions:
+
+```ivy
+-- Function that returns a function
+fn makeAdder(n: Int): Int -> Int =>
+  fn (x) => x + n
+
+let add5 = makeAdder(5)
+let result = add5(10)  -- 15
+
+-- Function that takes a function
+fn twice(f: a -> a, x: a): a => f(f(x))
+
+let quadruple = twice(fn (x) => x * 2, 5)  -- 20
+```
+
+### Common Higher-Order Functions
+
+<CodeGroup>
+
+```ivy Map
+fn map(f: a -> b, []): [b] => [];
+fn map(f: a -> b, [x | xs]): [b] => [f(x) | map(f, xs)];
+
+-- Usage
+let squares = map(fn (x) => x * x, [1, 2, 3, 4])
+-- [1, 4, 9, 16]
+```
+
+```ivy Filter
+fn filter(pred: a -> Bool, []): [a] => [];
+fn filter(pred: a -> Bool, [x | xs]): [a] =>
+  if pred(x) then [x | filter(pred, xs)] 
+  else filter(pred, xs);
+
+-- Usage
+let evens = filter(fn (x) => x % 2 == 0, [1, 2, 3, 4])
+-- [2, 4]
+```
+
+```ivy Fold Left
+fn foldl(f: b -> a -> b, acc: b, []): b => acc;
+fn foldl(f: b -> a -> b, acc: b, [x | xs]): b => 
+  foldl(f, f(acc, x), xs);
+
+-- Usage
+let sum = foldl(fn (acc, x) => acc + x, 0, [1, 2, 3])
+-- 6
+```
+
+```ivy Fold Right
+fn foldr(f: a -> b -> b, acc: b, []): b => acc;
+fn foldr(f: a -> b -> b, acc: b, [x | xs]): b => 
+  f(x, foldr(f, acc, xs));
+
+-- Usage
+let concat = foldr(fn (x, acc) => [x | acc], [], [1, 2, 3])
+-- [1, 2, 3]
+```
+
+</CodeGroup>
+
+## Closures
+
+Functions can capture variables from their enclosing scope:
+
+```ivy
+fn makeCounter(start: Int): () -> Int => do {
+  let mut count = start;
+  fn () => do {
+    count = count + 1;
+    count
+  }
+}
+
+let counter = makeCounter(0)
+let a = counter()  -- 1
+let b = counter()  -- 2
+let c = counter()  -- 3
+```
+
+<Note>
+Closures capture variables from their environment, allowing for powerful patterns like currying and partial application.
+</Note>
+
+## Function Composition
+
+Compose functions to create new functions:
+
+```ivy
+fn compose(f: b -> c, g: a -> b): a -> c => 
+  fn (x) => f(g(x))
+
+let addOne = fn (x) => x + 1
+let double = fn (x) => x * 2
+
+let addOneThenDouble = compose(double, addOne)
+let result = addOneThenDouble(5)  -- 12
+```
+
+## Currying
+
+All multi-parameter functions in Ivy are automatically curried:
+
+```ivy
+fn add(x: Int, y: Int): Int => x + y
+
+-- Can be partially applied
+let add5 = add(5)  -- Returns a function: Int -> Int
+let result = add5(10)  -- 15
+
+-- Also works with lambdas
+let multiply = fn (x, y) => x * y
+let double = multiply(2)
+let eight = double(4)  -- 8
+```
+
+## Public Functions
+
+Use the `pub` keyword to export functions from modules:
+
+```ivy
+-- Only visible within this module
+fn helper(x) => x + 1
+
+-- Exported and available to importers
+pub fn publicFunction(x) => helper(x) * 2
+```
+
+## Common Function Utilities
+
+The Prelude provides useful function combinators:
+
+```ivy
+-- Identity: returns its argument unchanged
+fn id(x: a): a => x
+
+-- Const: returns first argument, ignores second
+fn const(x: a, _: b): a => x
+
+-- Flip: swaps argument order
+fn flip(f: a -> b -> c): b -> a -> c => 
+  fn (y, x) => f(x, y)
+
+-- Pipe: applies function to value (useful with |> operator)
+fn pipe(x: a, f: a -> b): b => f(x)
+```
+
+## Best Practices
+
+<CodeGroup>
+
+```ivy Prefer Pattern Matching
+-- Good: Clear and concise
+fn isEmpty([]) => true;
+fn isEmpty([_ | _]) => false;
+
+-- Less ideal: Verbose
+fn isEmpty(xs) =>
+  match xs with
+  | [] -> true
+  | _ -> false
+  end
+```
+
+```ivy Use Descriptive Names
+-- Good: Clear intent
+fn findUserById(id: Int): Option<User>
+fn isValidEmail(email: String): Bool
+
+-- Poor: Unclear
+fn f(x: Int): Option<User>
+fn check(s: String): Bool
+```
+
+```ivy Leverage Type Inference
+-- Good: Balance between clarity and conciseness
+fn map(f: a -> b, xs: [a]): [b] =>
+  match xs with
+  | [] -> []
+  | [y | ys] -> [f(y) | map(f, ys)]
+  end
+
+-- Over-annotated
+fn map(f: a -> b, xs: [a]): [b] =>
+  match (xs: [a]) with
+  | ([] : [a]) -> ([] : [b])
+  | ([y | ys] : [a]) -> ([f(y) | map(f, ys)] : [b])
+  end
+```
+
+</CodeGroup>
+
+## Next Steps
+
+- [Pattern Matching](/language/pattern-matching) - Master destructuring and pattern-based dispatch
+- [Modules](/language/modules) - Organize and share functions across files
+- [Type Inference](/language/type-inference) - Understand how Ivy infers function types

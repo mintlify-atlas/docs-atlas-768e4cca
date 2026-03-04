@@ -1,0 +1,341 @@
+---
+title: Type System
+description: Explore Ivy's static type system, algebraic data types, and type inference
+---
+
+Ivy features a powerful static type system based on Hindley-Milner type inference. The type system ensures safety while minimizing the need for explicit type annotations.
+
+## Primitive Types
+
+Ivy has six built-in primitive types:
+
+```ivy
+let number: Int = 42            -- Integer numbers
+let decimal: Float = 3.14       -- Floating-point numbers
+let flag: Bool = true           -- Boolean values (true/false)
+let text: String = "Hello"      -- Text strings
+let character: Char = 'a'       -- Single characters
+let unit: () = ()               -- Unit type (no value)
+```
+
+<Note>
+These primitive types are implemented directly in the Rust runtime and cannot be redefined in Ivy.
+</Note>
+
+## Type Annotations
+
+While Ivy infers most types automatically, you can add explicit annotations:
+
+```ivy
+-- Variable annotations
+let x: Int = 10
+
+-- Function parameter annotations
+fn add(x: Int, y: Int): Int => x + y
+
+-- Let binding annotations
+let identity: a -> a = fn (x) => x
+```
+
+## Function Types
+
+Function types use the `->` arrow operator:
+
+```ivy
+-- Simple function type
+fn increment: Int -> Int
+fn increment(x) => x + 1
+
+-- Multi-parameter function (curried)
+fn add: Int -> Int -> Int
+fn add(x, y) => x + y
+
+-- Function with complex types
+fn map: (a -> b) -> [a] -> [b]
+```
+
+<Tip>
+Function types are right-associative: `a -> b -> c` means `a -> (b -> c)`
+</Tip>
+
+## Parametric Polymorphism
+
+Type variables (lowercase) allow functions to work with any type:
+
+```ivy
+-- Identity function works for any type 'a'
+fn id(x: a): a => x
+
+let num = id(42)        -- a = Int
+let str = id("hello")   -- a = String
+
+-- List functions are polymorphic
+fn head([]): Option<a> => None;
+fn head([x | _]): Option<a> => Some(x);
+```
+
+## Algebraic Data Types
+
+Ivy supports two kinds of algebraic data types: sum types and product types.
+
+### Sum Types (Variants)
+
+Sum types define a type with multiple variants:
+
+```ivy
+-- Simple enum
+type Ordering =
+| Less
+| Equal
+| Greater
+;
+
+-- Parametric sum type
+type Option<a> =
+| None
+| Some(a)
+;
+
+-- Multiple parameters
+type Result<T, E> =
+| Ok(T)
+| Err(E)
+;
+```
+
+<CodeGroup>
+
+```ivy Definition
+type Option<a> =
+| None                -- Unit variant (no data)
+| Some(a)             -- Data variant (holds a value)
+;
+```
+
+```ivy Usage
+let nothing: Option<Int> = None
+let something: Option<Int> = Some(42)
+
+-- Pattern match to extract values
+match something with
+| None -> "nothing"
+| Some(x) -> "got: " ++ show(x)
+end
+```
+
+</CodeGroup>
+
+### Product Types (Records)
+
+Records are product types with named fields:
+
+```ivy
+type Person = {
+  name: String,
+  age: Int
+};
+
+type Point<a> = {
+  x: a,
+  y: a
+};
+```
+
+<Note>
+Record types are currently defined with the `type` keyword but constructed differently than sum types.
+</Note>
+
+## Type Constructors
+
+Type constructors build complex types from simpler ones:
+
+### List Type
+
+```ivy
+let empty: [Int] = []
+let numbers: [Int] = [1, 2, 3]
+let nested: [[String]] = [["a"], ["b", "c"]]
+```
+
+### Tuple Type
+
+```ivy
+let pair: (Int, String) = (42, "answer")
+let triple: (Bool, Int, Float) = (true, 1, 3.14)
+```
+
+### Generic Type Application
+
+```ivy
+let maybeInt: Option<Int> = Some(42)
+let result: Result<String, Int> = Ok("success")
+let points: [Point<Float>] = [{ x: 1.0, y: 2.0 }]
+```
+
+## Type Aliases
+
+While Ivy doesn't have explicit type aliases, you can define wrapper types:
+
+```ivy
+-- Define a new named type
+type UserId = { id: Int };
+type Email = { address: String };
+```
+
+## Built-in Algebraic Types
+
+The Prelude defines essential algebraic types:
+
+<CodeGroup>
+
+```ivy Option
+type Option<a> =
+| None
+| Some(a)
+;
+
+-- Use Option instead of null
+fn divide(a: Int, b: Int): Option<Int> =>
+  if b == 0 then None
+  else Some(a / b)
+```
+
+```ivy Result
+type Result<T, E> =
+| Ok(T)
+| Err(E)
+;
+
+-- Use Result for operations that can fail
+fn parseNumber(s: String): Result<Int, String> =>
+  -- Implementation would parse string
+  Ok(42)  -- or Err("invalid number")
+```
+
+```ivy Ordering
+type Ordering =
+| Less
+| Equal  
+| Greater
+;
+
+-- Used for comparisons
+fn compare(x: Int, y: Int): Ordering =>
+  if x < y then Less
+  else if x > y then Greater
+  else Equal
+```
+
+</CodeGroup>
+
+## Type Constraints (Traits)
+
+Ivy supports type classes (traits) for constrained polymorphism:
+
+```ivy
+-- Trait definition
+trait Show<a> {
+  fn show(x: a): String;
+}
+
+-- Implementation
+impl Show for Int {
+  fn show(n) => __intToString(n);
+}
+
+-- Constrained polymorphic function
+fn display(x: a): String where Show<a> =>
+  "Value: " ++ show(x)
+```
+
+### Common Traits
+
+<Tabs>
+  <Tab title="Show">
+  ```ivy
+  trait Show<a> {
+    fn show(x: a): String;
+  }
+  
+  impl Show for Bool {
+    fn show(true) => "true";
+    fn show(false) => "false";
+  }
+  ```
+  </Tab>
+  
+  <Tab title="Eq">
+  ```ivy
+  trait Eq<a> {
+    fn eq(x: a, y: a): Bool;
+    fn neq(x: a, y: a): Bool => !(eq(x, y));
+  }
+  
+  impl Eq for Bool {
+    fn eq(true, true) => true;
+    fn eq(false, false) => true;
+    fn eq(_, _) => false;
+  }
+  ```
+  </Tab>
+  
+  <Tab title="Ord">
+  ```ivy
+  trait Ord<a> {
+    fn compare(x: a, y: a): Ordering;
+    
+    fn lt(x: a, y: a): Bool => match compare(x, y) with
+    | Less -> true
+    | _ -> false
+    end;
+  }
+  ```
+  </Tab>
+</Tabs>
+
+## Type Inference
+
+Ivy uses Hindley-Milner type inference, so explicit type annotations are often unnecessary:
+
+```ivy
+-- No annotations needed
+let double = fn (x) => x + x         -- Inferred: Int -> Int
+let map = fn (f, xs) => match xs with
+  | [] -> []
+  | [y | ys] -> [f(y) | map(f, ys)]
+end                                    -- Inferred: (a -> b) -> [a] -> [b]
+
+-- Annotations provide clarity and early error detection
+fn length(xs: [a]): Int => match xs with
+  | [] -> 0
+  | [_ | rest] -> 1 + length(rest)
+end
+```
+
+<Tip>
+The compiler infers the most general type possible. For more details, see the [Type Inference](/language/type-inference) guide.
+</Tip>
+
+## Type Errors
+
+The type checker catches errors at compile time:
+
+```ivy
+-- Type mismatch
+let x: Int = "hello"  -- Error: expected Int, got String
+
+-- Function application error
+let add = fn (x: Int, y: Int) => x + y
+let result = add("1", "2")  -- Error: expected Int, got String
+
+-- Pattern match exhaustiveness
+match someOption with
+| Some(x) -> x
+end  -- Error: non-exhaustive match (missing None case)
+```
+
+## Next Steps
+
+- [Type Inference](/language/type-inference) - Deep dive into Hindley-Milner type inference
+- [Pattern Matching](/language/pattern-matching) - Destructure algebraic data types
+- [Functions](/language/functions) - Learn about polymorphic functions

@@ -1,0 +1,191 @@
+---
+title: 'CLI Usage'
+description: 'Command-line interface for running Ivy programs and starting the REPL'
+---
+
+## Overview
+
+The Ivy CLI provides two primary modes of operation:
+1. **File execution mode** - Run Ivy source files
+2. **REPL mode** - Interactive read-eval-print loop
+
+## Basic Usage
+
+### Run a File
+
+Execute an Ivy program from a source file:
+
+```bash
+ivy <file>
+```
+
+**Example:**
+```bash
+ivy examples/hello.ivy
+```
+
+When running a file, Ivy will:
+1. Parse the source code
+2. Perform type checking
+3. Execute the program
+4. Report any errors with source code context
+
+### Start the REPL
+
+Launch the interactive REPL by running Ivy without arguments:
+
+```bash
+ivy
+```
+
+The REPL provides:
+- Interactive expression evaluation
+- Multi-line input support
+- Type inference inspection
+- Environment exploration
+- Built-in commands (see below)
+
+<Note>
+The REPL automatically loads the prelude library and provides colorized output for better readability.
+</Note>
+
+## REPL Commands
+
+The REPL supports several special commands prefixed with `:`:
+
+<ParamField path=":help" type="command">
+  Show the help message with all available REPL commands
+  
+  **Aliases:** `:h`
+  
+  ```
+  ivy> :help
+  ```
+</ParamField>
+
+<ParamField path=":quit" type="command">
+  Exit the REPL
+  
+  **Aliases:** `:q`
+  
+  ```
+  ivy> :quit
+  ```
+</ParamField>
+
+<ParamField path=":reset" type="command">
+  Reset the interpreter state, clearing all user-defined bindings
+  
+  **Aliases:** `:r`
+  
+  ```
+  ivy> :reset
+  Interpreter state reset.
+  ```
+</ParamField>
+
+<ParamField path=":type <expr>" type="command">
+  Display the inferred type of an expression without evaluating it
+  
+  **Aliases:** `:t`
+  
+  ```
+  ivy> :type [1, 2, 3]
+  [1, 2, 3] :: List Int
+  ```
+</ParamField>
+
+<ParamField path=":env" type="command">
+  Show all defined names in the current scope, including user-defined bindings and module exports
+  
+  ```
+  ivy> :env
+  Defined names:
+    factorial
+    fibonacci
+    Math.pi
+  ```
+</ParamField>
+
+## Multi-line Input
+
+The REPL supports multi-line input for complex expressions. It automatically detects unclosed delimiters and continues prompting:
+
+```
+ivy> let add x y =
+...>   x + y
+...> in add 5 3
+8
+```
+
+The REPL will show a continuation prompt (`...>`) when:
+- Parentheses, brackets, or braces are unclosed
+- String literals are unterminated
+- Expressions are incomplete
+
+## Module Resolution
+
+When running files or using the REPL, Ivy searches for imported modules in the following locations:
+
+1. Current working directory
+2. `lib/` subdirectory of the current working directory
+3. `lib/` directory relative to the Ivy executable
+
+For file execution, the parent directory of the file is also added to the search path.
+
+## Error Reporting
+
+Ivy provides detailed error messages with source code context using the miette diagnostic library:
+
+<CodeGroup>
+```bash Parse Error Example
+$ ivy examples/error.ivy
+
+Error: unexpected token
+  ┌─ examples/error.ivy:3:10
+  │
+3 │ let x = )
+  │         ^ found ) here
+```
+
+```bash Type Error Example  
+$ ivy examples/type-error.ivy
+
+Error: type mismatch
+  ┌─ examples/type-error.ivy:5:15
+  │
+5 │ let result = add "hello" 42
+  │              ^^^^^^^^^^^^^^ expected Int, found String
+```
+
+```bash Runtime Error Example
+$ ivy examples/runtime-error.ivy
+
+Error: division by zero
+  ┌─ examples/runtime-error.ivy:8:20
+  │
+8 │ let result = x / 0
+  │              ^^^^^ division by zero
+```
+</CodeGroup>
+
+## Exit Codes
+
+The Ivy CLI uses the following exit codes:
+
+- **0** - Successful execution
+- **1** - Error occurred (parse error, type error, runtime error, or file not found)
+
+## Getting Help
+
+Display CLI usage information:
+
+```bash
+ivy --help
+```
+
+Display REPL commands from within the REPL:
+
+```
+ivy> :help
+```

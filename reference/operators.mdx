@@ -1,0 +1,379 @@
+---
+title: Operators
+description: Complete reference for all operators in Ivy with precedence and associativity
+---
+
+This page documents all operators available in Ivy, their precedence, and associativity.
+
+## Operator Precedence
+
+Operators are listed from highest to lowest precedence:
+
+| Precedence | Operators | Description | Associativity |
+|------------|-----------|-------------|---------------|
+| 1 | `()` `.` `[]` | Function call, field access, indexing | Left-to-right |
+| 2 | `-` `!` | Unary negation, logical NOT | Right-to-left |
+| 3 | `*` `/` `%` | Multiplication, division, modulo | Left-to-right |
+| 4 | `+` `-` | Addition, subtraction | Left-to-right |
+| 5 | `++` | List/string concatenation | Right-to-left |
+| 6 | `::` | List cons | Right-to-left |
+| 7 | `<` `<=` `>` `>=` | Comparison | Non-associative |
+| 8 | `==` `!=` | Equality, inequality | Non-associative |
+| 9 | `&&` | Logical AND | Left-to-right |
+| 10 | `||` | Logical OR | Left-to-right |
+| 11 | `=` | Assignment | Right-to-left |
+
+## Binary Operators
+
+### Arithmetic Operators
+
+#### Addition: `+`
+
+Adds two numbers.
+
+```ivy
+let sum = 5 + 3;        // 8
+let result = 1.5 + 2.5; // 4.0
+```
+
+**Type:** `Int -> Int -> Int` or `Float -> Float -> Float`
+
+#### Subtraction: `-`
+
+Subtracts the second operand from the first.
+
+```ivy
+let diff = 10 - 3;      // 7
+let result = 5.5 - 2.5; // 3.0
+```
+
+**Type:** `Int -> Int -> Int` or `Float -> Float -> Float`
+
+#### Multiplication: `*`
+
+Multiplies two numbers.
+
+```ivy
+let product = 4 * 5;    // 20
+let result = 2.5 * 4.0; // 10.0
+```
+
+**Type:** `Int -> Int -> Int` or `Float -> Float -> Float`
+
+#### Division: `/`
+
+Divides the first operand by the second.
+
+```ivy
+let quotient = 20 / 4;  // 5
+let result = 7.5 / 2.5; // 3.0
+```
+
+**Type:** `Int -> Int -> Int` or `Float -> Float -> Float`
+
+<Note>
+Integer division truncates toward zero. Use float literals for decimal division.
+</Note>
+
+#### Modulo: `%`
+
+Returns the remainder of division.
+
+```ivy
+let remainder = 10 % 3;  // 1
+let even = 8 % 2;        // 0
+```
+
+**Type:** `Int -> Int -> Int`
+
+### Comparison Operators
+
+Comparison operators are non-associative (cannot be chained).
+
+#### Less Than: `<`
+
+```ivy
+let result = 5 < 10;    // true
+let check = 10 < 5;     // false
+```
+
+**Type:** `a -> a -> Bool` (where `a` is comparable)
+
+#### Less Than or Equal: `<=`
+
+```ivy
+let result = 5 <= 5;    // true
+let check = 10 <= 5;    // false
+```
+
+**Type:** `a -> a -> Bool` (where `a` is comparable)
+
+#### Greater Than: `>`
+
+```ivy
+let result = 10 > 5;    // true
+let check = 5 > 10;     // false
+```
+
+**Type:** `a -> a -> Bool` (where `a` is comparable)
+
+#### Greater Than or Equal: `>=`
+
+```ivy
+let result = 10 >= 10;  // true
+let check = 5 >= 10;    // false
+```
+
+**Type:** `a -> a -> Bool` (where `a` is comparable)
+
+### Equality Operators
+
+#### Equal: `==`
+
+Tests if two values are equal.
+
+```ivy
+let same = 5 == 5;           // true
+let different = "hi" == "bye"; // false
+```
+
+**Type:** `a -> a -> Bool`
+
+#### Not Equal: `!=`
+
+Tests if two values are not equal.
+
+```ivy
+let different = 5 != 3;      // true
+let same = "hi" != "hi";     // false
+```
+
+**Type:** `a -> a -> Bool`
+
+### Logical Operators
+
+#### Logical AND: `&&`
+
+Returns `true` if both operands are true.
+
+```ivy
+let result = true && true;   // true
+let check = true && false;   // false
+```
+
+**Type:** `Bool -> Bool -> Bool`
+
+**Short-circuiting:** The right operand is not evaluated if the left is `false`.
+
+```ivy
+if x > 0 && expensive_check(x) then
+  // expensive_check only called if x > 0
+  doSomething()
+else
+  doNothing()
+```
+
+#### Logical OR: `||`
+
+Returns `true` if either operand is true.
+
+```ivy
+let result = true || false;  // true
+let check = false || false;  // false
+```
+
+**Type:** `Bool -> Bool -> Bool`
+
+**Short-circuiting:** The right operand is not evaluated if the left is `true`.
+
+```ivy
+if x == 0 || safe_divide(10, x) > 5 then
+  // safe_divide not called if x == 0
+  doSomething()
+else
+  doNothing()
+```
+
+### List Operators
+
+#### Cons: `::`
+
+Prepends an element to a list.
+
+```ivy
+let list = 1 :: [2, 3, 4];   // [1, 2, 3, 4]
+let nested = 0 :: 1 :: [2];  // [0, 1, 2] (right-associative)
+```
+
+**Type:** `a -> [a] -> [a]`
+
+**Associativity:** Right-to-left
+
+<Note>
+The cons operator is right-associative, so `a :: b :: c` is parsed as `a :: (b :: c)`.
+</Note>
+
+#### Concatenation: `++`
+
+Concatenates two lists or strings.
+
+```ivy
+let list = [1, 2] ++ [3, 4];        // [1, 2, 3, 4]
+let string = "Hello, " ++ "world!"; // "Hello, world!"
+let multi = [1] ++ [2] ++ [3];      // [1, 2, 3]
+```
+
+**Type:** `[a] -> [a] -> [a]` or `String -> String -> String`
+
+**Associativity:** Right-to-left
+
+## Unary Operators
+
+### Negation: `-`
+
+Negates a number.
+
+```ivy
+let negative = -42;      // -42
+let positive = -(-10);   // 10
+let float_neg = -3.14;   // -3.14
+```
+
+**Type:** `Int -> Int` or `Float -> Float`
+
+### Logical NOT: `!`
+
+Negates a boolean value.
+
+```ivy
+let opposite = !true;    // false
+let check = !false;      // true
+let double = !!true;     // true
+```
+
+**Type:** `Bool -> Bool`
+
+## Special Operators
+
+### Assignment: `=`
+
+Assigns a value to a mutable variable.
+
+```ivy
+let mut x = 10;
+x = 20;
+x = x + 5;
+```
+
+<Note>
+Assignment is only valid for mutable variables declared with `let mut`. Regular `let` bindings are immutable.
+</Note>
+
+### Function Application
+
+Function calls use parentheses:
+
+```ivy
+print("hello")
+add(1, 2)
+map(fn (x) => x * 2, numbers)
+```
+
+### Field Access: `.`
+
+Accesses a field of a record.
+
+```ivy
+let name = person.name;
+let x_coord = point.x;
+```
+
+### Index Access: `[]`
+
+Accesses an element of a list by index.
+
+```ivy
+let first = list[0];
+let third = numbers[2];
+let nested = matrix[i][j];
+```
+
+## Operator Associativity
+
+### Left-Associative Operators
+
+These operators group from left to right:
+
+```ivy
+// Arithmetic
+10 - 5 - 2    // (10 - 5) - 2 = 3
+
+// Function calls
+f(g(h(x)))    // ((f(g))(h))(x)
+
+// Field access
+obj.field.subfield  // (obj.field).subfield
+```
+
+### Right-Associative Operators
+
+These operators group from right to left:
+
+```ivy
+// List cons
+1 :: 2 :: [3]       // 1 :: (2 :: [3])
+
+// Concatenation
+[1] ++ [2] ++ [3]   // [1] ++ ([2] ++ [3])
+
+// Function types
+Int -> Int -> Int   // Int -> (Int -> Int)
+```
+
+### Non-Associative Operators
+
+These operators cannot be chained:
+
+```ivy
+// Comparison operators - must use && or ||
+// x < y < z    // ERROR: invalid
+x < y && y < z  // OK
+
+// Equality operators
+// a == b == c  // ERROR: invalid
+a == b && b == c // OK
+```
+
+## Examples
+
+### Complex Expressions
+
+```ivy
+// Arithmetic with precedence
+let result = 2 + 3 * 4;        // 14 (not 20)
+let explicit = 2 + (3 * 4);    // 14 (same)
+let different = (2 + 3) * 4;   // 20
+
+// Logical operations
+let check = x > 0 && x < 10 || x == 100;
+// Parsed as: ((x > 0) && (x < 10)) || (x == 100)
+
+// List operations
+let combined = 0 :: [1, 2] ++ [3, 4];
+// Parsed as: 0 :: ([1, 2] ++ [3, 4])
+// Result: [0, 1, 2, 3, 4]
+```
+
+### Using Parentheses
+
+```ivy
+// Override default precedence
+let a = (2 + 3) * 4;           // 20
+let b = 2 + 3 * 4;             // 14
+
+// Clarify intent
+let complex = (x >= 0 && x <= 10) || (x >= 90 && x <= 100);
+
+// Group function calls
+let result = f(g(x) + h(y));
+```

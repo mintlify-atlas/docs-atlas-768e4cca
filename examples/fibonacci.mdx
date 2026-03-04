@@ -1,0 +1,278 @@
+---
+title: "Fibonacci Sequence"
+description: "Learn recursion and pattern matching with the classic Fibonacci sequence"
+icon: "infinity"
+---
+
+## Overview
+
+The Fibonacci sequence is a perfect example to demonstrate Ivy's powerful pattern matching and recursion capabilities. This example shows multiple approaches to computing Fibonacci numbers, from simple to optimized.
+
+## Basic Recursive Implementation
+
+Here's the most straightforward implementation using pattern matching:
+
+```ivy
+fn fib(0) => 0;
+fn fib(1) => 1;
+fn fib(n) => fib(n - 1) + fib(n - 2);
+
+println(fib(10));
+```
+
+**Output:**
+```
+55
+```
+
+## How It Works
+
+<Steps>
+  <Step title="Base cases">
+    The first two function definitions handle the base cases:
+    - `fib(0)` returns `0`
+    - `fib(1)` returns `1`
+    
+    These stop the recursion from continuing indefinitely.
+  </Step>
+  
+  <Step title="Recursive case">
+    The third definition matches any other number `n` and recursively computes:
+    - `fib(n - 1)` - the previous Fibonacci number
+    - `fib(n - 2)` - two numbers back
+    - Returns their sum
+  </Step>
+  
+  <Step title="Pattern matching order">
+    Ivy tries to match patterns from top to bottom. The specific patterns (`0` and `1`) are checked before the general pattern (`n`).
+  </Step>
+</Steps>
+
+<Note>
+  This implementation is elegant but inefficient for large numbers because it recalculates the same values many times. For `fib(10)`, it makes 177 recursive calls!
+</Note>
+
+## Computing Multiple Values
+
+Let's generate the first several Fibonacci numbers:
+
+```ivy
+fn fib(0) => 0;
+fn fib(1) => 1;
+fn fib(n) => fib(n - 1) + fib(n - 2);
+
+fn printFib(n) => do {
+  print("fib(");
+  print(n);
+  print(") = ");
+  println(fib(n))
+};
+
+printFib(0);
+printFib(1);
+printFib(2);
+printFib(3);
+printFib(5);
+printFib(8);
+```
+
+**Output:**
+```
+fib(0) = 0
+fib(1) = 1
+fib(2) = 1
+fib(3) = 2
+fib(5) = 5
+fib(8) = 21
+```
+
+## Using Guards for Validation
+
+We can add guards to handle invalid inputs:
+
+```ivy
+fn fib(n)
+  | n < 0 => 0
+  | n == 0 => 0
+  | n == 1 => 1
+  | n > 1 => fib(n - 1) + fib(n - 2);
+
+println(fib(-5));  -- Handles negative input
+println(fib(7));
+```
+
+**Output:**
+```
+0
+13
+```
+
+<Accordion title="What are guards?">
+  Guards are boolean conditions that can be added to function patterns. They're introduced with the pipe symbol (`|`) followed by a condition and `=>`.
+  
+  Ivy evaluates guards in order from top to bottom and uses the first one that matches. This is useful for:
+  - Range checking
+  - Input validation
+  - Different behaviors based on computed conditions
+</Accordion>
+
+## Optimized Implementation with Helper Function
+
+For better performance, we can use a tail-recursive helper function:
+
+```ivy
+fn fibHelper(0, a, b) => a;
+fn fibHelper(n, a, b) => fibHelper(n - 1, b, a + b);
+
+fn fibFast(n) => fibHelper(n, 0, 1);
+
+println(fibFast(10));
+println(fibFast(20));
+println(fibFast(30));
+```
+
+**Output:**
+```
+55
+6765
+832040
+```
+
+### Why is this faster?
+
+- **Tail recursion**: The recursive call is the last operation, allowing optimization
+- **Linear complexity**: Only makes `n` recursive calls instead of exponential
+- **Accumulator pattern**: Carries forward intermediate results in parameters `a` and `b`
+
+<Steps>
+  <Step title="Initial call">
+    `fibFast(10)` calls `fibHelper(10, 0, 1)`
+  </Step>
+  
+  <Step title="Each iteration">
+    The helper decrements `n` and shifts the accumulator values:
+    - New `a` becomes old `b`
+    - New `b` becomes `a + b`
+  </Step>
+  
+  <Step title="Base case">
+    When `n` reaches `0`, return the accumulated value `a`
+  </Step>
+</Steps>
+
+## Generating a Fibonacci List
+
+We can generate a list of Fibonacci numbers using recursion:
+
+```ivy
+fn fib(0) => 0;
+fn fib(1) => 1;
+fn fib(n) => fib(n - 1) + fib(n - 2);
+
+fn fibList(0) => [0];
+fn fibList(n) => fibList(n - 1) ++ [fib(n)];
+
+println(fibList(10));
+```
+
+**Output:**
+```
+[0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
+```
+
+<Note>
+  The `++` operator concatenates lists. We build the list by appending each new Fibonacci number to the result of the previous recursive call.
+</Note>
+
+## Using Pattern Matching on Results
+
+You can use pattern matching to categorize Fibonacci numbers:
+
+```ivy
+fn fib(0) => 0;
+fn fib(1) => 1;
+fn fib(n) => fib(n - 1) + fib(n - 2);
+
+fn describeFib(n) => match fib(n) with
+  | 0 -> "zero"
+  | 1 -> "one"
+  | x -> "greater than one"
+end;
+
+println(describeFib(0));
+println(describeFib(1));
+println(describeFib(5));
+```
+
+**Output:**
+```
+zero
+one
+greater than one
+```
+
+## Fibonacci with Do Blocks
+
+Use do blocks for more complex logic:
+
+```ivy
+fn fib(0) => 0;
+fn fib(1) => 1;
+fn fib(n) => fib(n - 1) + fib(n - 2);
+
+fn fibInfo(n) => do {
+  let result = fib(n);
+  let previous = if n > 0 then fib(n - 1) else 0;
+  let ratio = if previous > 0 then result / previous else 0;
+  
+  println("F(" ++ show(n) ++ ") = " ++ show(result));
+  println("Ratio: " ++ show(ratio));
+  result
+};
+
+fibInfo(8);
+```
+
+**Output:**
+```
+F(8) = 21
+Ratio: 2
+21
+```
+
+<Accordion title="Understanding do blocks">
+  Do blocks allow you to write multiple statements in sequence:
+  - Create local variables with `let`
+  - Perform side effects (like printing)
+  - Return the value of the last expression
+  
+  They're perfect when you need to do more than a single expression in a function body.
+</Accordion>
+
+## Key Takeaways
+
+- **Pattern matching on literals** makes base cases clear and concise
+- **Multiple function definitions** allow you to handle different cases separately
+- **Recursion** is a natural way to express mathematical sequences
+- **Guards** provide conditional logic within pattern matching
+- **Tail recursion** with accumulators can dramatically improve performance
+- **Do blocks** enable complex multi-step computations
+
+## Performance Comparison
+
+| Implementation | fib(10) calls | fib(20) calls | Complexity |
+|----------------|---------------|---------------|------------|
+| Basic recursive | 177 | 21,891 | O(2^n) |
+| Tail recursive | 10 | 20 | O(n) |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Recursive Functions" icon="rotate" href="/examples/recursive-functions">
+    Explore more recursive patterns and techniques
+  </Card>
+  
+  <Card title="Pattern Matching" icon="shapes" href="/examples/pattern-matching">
+    Deep dive into pattern matching capabilities
+  </Card>
+</CardGroup>
