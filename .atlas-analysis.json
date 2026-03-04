@@ -1,0 +1,122 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "Ivy",
+  "projectDescription": "A friendly, statically-typed functional programming language with Hindley-Milner type inference",
+  "theme": "palm",
+  "primaryColor": "#4CAF50",
+  "lightColor": "#81C784",
+  "darkColor": "#2E7D32",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Language Guide",
+            "pages": [
+              "language/basics",
+              "language/types",
+              "language/functions",
+              "language/pattern-matching",
+              "language/modules",
+              "language/type-inference"
+            ]
+          },
+          {
+            "group": "REPL",
+            "pages": [
+              "repl/getting-started",
+              "repl/commands",
+              "repl/multi-line"
+            ]
+          },
+          {
+            "group": "Standard Library",
+            "pages": [
+              "stdlib/overview",
+              "stdlib/prelude",
+              "stdlib/list",
+              "stdlib/string",
+              "stdlib/math",
+              "stdlib/file",
+              "stdlib/random",
+              "stdlib/convert"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "CLI Reference",
+            "pages": [
+              "reference/cli-usage",
+              "reference/compiler-options",
+              "reference/type-checking"
+            ]
+          },
+          {
+            "group": "Type System",
+            "pages": [
+              "reference/type-system",
+              "reference/type-inference",
+              "reference/builtin-types"
+            ]
+          },
+          {
+            "group": "Language Syntax",
+            "pages": [
+              "reference/syntax",
+              "reference/operators",
+              "reference/keywords"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Examples",
+        "groups": [
+          {
+            "group": "Code Examples",
+            "pages": [
+              "examples/hello-world",
+              "examples/fibonacci",
+              "examples/type-inference",
+              "examples/pattern-matching",
+              "examples/recursive-functions"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Hindley-Milner type inference",
+    "Pattern matching with exhaustiveness checking",
+    "Functional programming paradigm",
+    "Interactive REPL with multi-line support",
+    "Module system with imports",
+    "Static type checking",
+    "Rich standard library"
+  ],
+  "publicApiSurface": [
+    "ivy <file> - Run an Ivy program",
+    "ivy - Start the REPL",
+    "ivy --check - Type check without running",
+    "ivy --tree - Print the syntax tree",
+    ":help - Show REPL help",
+    ":type <expr> - Show inferred type",
+    ":load <path> - Load and execute a file",
+    ":env - Show defined names",
+    ":reset - Reset interpreter state"
+  ]
+}
